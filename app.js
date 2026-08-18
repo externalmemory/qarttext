@@ -6,6 +6,7 @@ const $ = (id) => document.getElementById(id);
 const els = {
   form: $('form'), url: $('url'), go: $('go'),
   ecl: $('ecl'), maxVersion: $('maxVersion'), maxLines: $('maxLines'), label: $('label'),
+  clearance: $('clearance'), offsetOut: $('offsetOut'), autoPlace: $('autoPlace'),
   status: $('status'), galleryWrap: $('galleryWrap'), gallery: $('gallery'),
   detail: $('detail'), detailTitle: $('detailTitle'), detailCaption: $('detailCaption'),
   bigCanvas: $('bigCanvas'), stats: $('stats'),
@@ -15,6 +16,7 @@ const els = {
 };
 
 let selected = null;
+let selectedCard = null;
 let token = 0;
 
 // --------------------------------------------------------------- the worker
@@ -37,6 +39,8 @@ async function runFallback(message, onMessage) {
   if (type === 'variants') {
     fallback.variants(opts, (result, i, n) => onMessage({ type: 'variant', token: tk, result, i, n }));
     onMessage({ type: 'done', token: tk });
+  } else if (type === 'nudge') {
+    onMessage({ type: 'nudged', token: tk, result: fallback.gen.generate(opts) });
   } else if (type === 'check') {
     const { generate, generatePlain, generateNoisyPadding } = fallback.gen;
     const tests = [
@@ -67,6 +71,7 @@ function readOptions() {
     ecl: els.ecl.value,
     maxVersion: Number(els.maxVersion.value),
     maxLines: Number(els.maxLines.value),
+    clearance: Number(els.clearance.value),
     text: override || null,
   };
 }
@@ -118,8 +123,9 @@ function makeCard(r) {
 
 function select(r, card) {
   selected = r;
+  if (card !== undefined) selectedCard = card;
   for (const c of els.gallery.querySelectorAll('.card')) c.setAttribute('aria-pressed', 'false');
-  card?.setAttribute('aria-pressed', 'true');
+  selectedCard?.setAttribute('aria-pressed', 'true');
 
   els.detail.hidden = false;
   els.detailTitle.textContent = variantName(r);
@@ -137,8 +143,68 @@ function select(r, card) {
     ['error correction', 'fully intact — nothing spent'],
   ].map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join('');
 
-  els.detail.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  els.offsetOut.textContent = r.offset
+    ? `x ${r.offset.x} of ${r.bounds.maxX}, y ${r.offset.y} of ${r.bounds.maxY}`
+    : '';
+  setNudgeEnabled(true);
 }
+
+// ---------------------------------------------------------------- placement
+
+// A direction is only offered when the box can actually travel that way: with
+// a text block nearly as wide as the symbol there may be no horizontal room at
+// all, and a dead button that silently does nothing is worse than a greyed one.
+function setNudgeEnabled(on) {
+  const auto = document.getElementById('autoPlace');
+  auto.disabled = !on;
+  for (const b of document.querySelectorAll('.nudge button[data-dx]')) {
+    if (!on || !selected?.offset) { b.disabled = true; continue; }
+    const dx = Number(b.dataset.dx), dy = Number(b.dataset.dy);
+    const { maxX, maxY } = selected.bounds;
+    const nx = Math.min(Math.max(selected.offset.x + dx, 0), maxX);
+    const ny = Math.min(Math.max(selected.offset.y + dy, 0), maxY);
+    b.disabled = nx === selected.offset.x && ny === selected.offset.y;
+  }
+}
+
+function nudge(dx, dy) {
+  if (!selected?.offset) return;
+  const b = selected.bounds ?? { maxX: selected.size, maxY: selected.size };
+  const offset = {
+    x: Math.min(Math.max(selected.offset.x + dx, 0), b.maxX),
+    y: Math.min(Math.max(selected.offset.y + dy, 0), b.maxY),
+  };
+  if (offset.x === selected.offset.x && offset.y === selected.offset.y) return;
+  replace({ offset, versionOverride: selected.version });
+}
+
+function replace(extra) {
+  const tk = ++token;
+  setNudgeEnabled(false);
+  send({
+    type: 'nudge', token: tk, ...readOptions(),
+    fontId: selected.fontId, styleId: selected.styleId, ...extra,
+  }, (msg) => {
+    if (msg.token !== tk) return;
+    setNudgeEnabled(true);
+    if (msg.type !== 'nudged' || !msg.result) { setStatus('That placement has no solution.', true); return; }
+    if (selectedCard) {
+      const canvas = selectedCard.querySelector('canvas');
+      if (canvas) {
+        drawToCanvas(msg.result, canvas, { scale: scaleFor(msg.result.size, 320), quiet: DEFAULT_QUIET, ...colours() });
+        painted.set(canvas, msg.result);
+      }
+    }
+    select(msg.result, undefined);
+  });
+}
+
+for (const b of document.querySelectorAll('.nudge button[data-dx]')) {
+  b.addEventListener('click', () => nudge(Number(b.dataset.dx), Number(b.dataset.dy)));
+}
+els.autoPlace.addEventListener('click', () => {
+  if (selected) replace({ offset: null, versionOverride: selected.version });
+});
 
 function redrawBig() {
   if (!selected) return;
@@ -219,6 +285,7 @@ function run() {
   els.galleryWrap.hidden = false;
   els.detail.hidden = true;
   selected = null;
+  selectedCard = null;
   setStatus('Solving…');
 
   const started = performance.now();

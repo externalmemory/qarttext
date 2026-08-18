@@ -79,11 +79,40 @@ expect a handful of stuck pixels — the card tells you how many before you pick
 | Error correction | `L` leaves the most room for artwork, `H` the least. `M` is a good default. |
 | Largest symbol | Caps how big the code may grow. Bigger symbols give cleaner text. |
 | Maximum lines | Whether long domains may wrap. Breaks are made at dots wherever possible. |
+| Clearance | Modules of whitespace between the letterforms and the surrounding noise. Default 3. |
 | Text override | Draw something other than the domain. |
 
 Three fonts (`Micro 3×5`, `Pixel 5×7`, `Lower 5×8`, all authored for this
-project) times three plate styles (`Plate`, `Halo`, `Bare`) make the nine
-variants.
+project) times three styles make the nine variants:
+
+- **Plate** — a light rectangle behind the text.
+- **Halo** — clearance around the strokes only; ordinary noise beyond it.
+- **Inverse** — a dark plate with light letters.
+
+Whitespace is what makes the text readable, far more than the choice of font.
+Clearance below 2 leaves the letterforms fighting the surrounding noise.
+
+## Placement
+
+Where the text sits is a real degree of freedom, and the app searches both axes
+for the best spot rather than simply centring.
+
+The scoring rule is that **a module we cannot control only costs us when its
+fixed value disagrees with what we want.** Function patterns have known values,
+so this lets the text settle where the symbol's own structure already happens to
+be right: a full stop landing on the dark centre of an alignment pattern is
+free, a stroke crossing the dark modules of the timing line is free, and the
+light ring inside an alignment pattern can serve as part of the clearance.
+
+Measured over 72 layouts, modules where the text overlaps a function pattern
+come out correct 61.5% of the time, against the ~50% that chance alone would
+give — the placement search really is exploiting the structure. Switching from
+the old rule (any uncontrollable module is a cost) cut the number of variants
+with any stuck letterform from 93 in 380 to 58 in 380, while *increasing*
+clearance from 2 modules to 3.
+
+The detail panel exposes a nudge pad if you want to place the text by hand;
+each nudge re-solves from scratch, and directions with no room are greyed out.
 
 ## Layout
 
@@ -117,7 +146,11 @@ carries its full, unspent correction capacity.
 
 A sweep of 380 combinations (10 URLs × 4 correction levels × 3 fonts × 3 styles,
 plus controls) decodes to the exact input URL with zero syndromes and zero
-SVG/canvas mismatches.
+SVG/canvas mismatches. The downloaded PNG and SVG files themselves were read
+back and decoded to confirm the exported artefacts, not just the in-memory grid.
+
+Codes from this generator have been confirmed to scan correctly on real iOS and
+Android camera apps.
 
 ## Credits
 

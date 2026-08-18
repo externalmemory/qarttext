@@ -3,15 +3,27 @@
 import { FONT_BY_ID, fitCase, glyphFor, measure } from './fonts.js';
 
 export const STYLES = [
-  { id: 'band', name: 'Plate', note: 'Solid light plate behind the text.', pad: 2 },
-  { id: 'halo', name: 'Halo', note: 'One-module outline, noise elsewhere.', pad: 1 },
-  { id: 'glyph', name: 'Bare', note: 'Letterforms only, no clearance.', pad: 0 },
+  { id: 'plate', name: 'Plate', note: 'Light plate behind the text.', kind: 'plate', invert: false },
+  { id: 'halo', name: 'Halo', note: 'Clearance only, noise beyond it.', kind: 'halo', invert: false },
+  { id: 'inverse', name: 'Inverse', note: 'Dark plate, light letters.', kind: 'plate', invert: true },
 ];
 export const STYLE_BY_ID = Object.fromEntries(STYLES.map(s => [s.id, s]));
+// earlier names, so saved links and old settings keep working
+const STYLE_ALIASES = { band: 'plate', glyph: 'halo' };
+export const resolveStyle = (id) => STYLE_BY_ID[id] ?? STYLE_BY_ID[STYLE_ALIASES[id]] ?? STYLES[0];
 
-const W_INK = 3;      // the letterforms themselves
-const W_CLEAR = 2;    // the module ring that separates them from the noise
-const W_PLATE = 1;    // the rest of the plate
+export const DEFAULT_CLEARANCE = 3;
+
+// Priority ladder. The solver satisfies constraints in this order and drops
+// the lowest first when it runs out of freedom, so letterforms always survive
+// and the outer plate is what degrades.
+const W_INK = 1000;   // the letterforms themselves
+const W_NEAR = 50;    // the module immediately around each stroke
+const W_CLEAR = 8;    // the rest of the requested clearance
+const W_PLATE = 1;    // plate area beyond the clearance
+
+/** Weight marking a letterform module, so callers can count them. */
+export const INK_WEIGHT = W_INK;
 
 /** The label to draw: host name for web URLs, something sensible otherwise. */
 export function domainOf(input) {
@@ -93,26 +105,24 @@ function blockMetrics(font, lines) {
   return { width, height };
 }
 
-/** Rasterises the lines into a boolean ink grid of the block's own size. */
-function rasterise(font, lines, width) {
-  const { height } = blockMetrics(font, lines);
-  const ink = new Uint8Array(width * height);
+/** Rasterises the lines into an ink grid the size of the whole padded box. */
+function rasterise(font, lines, width, boxW, boxH, pad) {
+  const ink = new Uint8Array(boxW * boxH);
   lines.forEach((line, li) => {
     const text = fitCase(font, line);
-    const lw = measure(font, line);
-    let x = Math.floor((width - lw) / 2);
-    const y0 = li * (font.height + font.leading);
+    let x = pad + Math.floor((width - measure(font, line)) / 2);
+    const y0 = pad + li * (font.height + font.leading);
     for (const ch of text) {
       const g = glyphFor(font, ch);
       for (let r = 0; r < font.height; r++) {
         for (let c = 0; c < g.width; c++) {
-          if (g.rows[r][c] && x + c < width) ink[(y0 + r) * width + x + c] = 1;
+          if (g.rows[r][c] && x + c < boxW && y0 + r < boxH) ink[(y0 + r) * boxW + x + c] = 1;
         }
       }
       x += g.width + font.tracking;
     }
   });
-  return { ink, width, height };
+  return ink;
 }
 
 /**
@@ -120,78 +130,131 @@ function rasterise(font, lines, width) {
  * `pinned` marks modules whose value cannot be changed; positions are scored so
  * the text lands where the fewest of its modules are stuck.
  */
-export function placeText({ size, pinned, fontId, styleId, lines, dark = 1 }) {
+export function placeText({
+  size, pinned, isFunction, functionValue,
+  fontId, styleId, lines, clearance = DEFAULT_CLEARANCE, offset = null,
+}) {
   const font = FONT_BY_ID[fontId];
-  const style = STYLE_BY_ID[styleId];
+  const style = resolveStyle(styleId);
   const { width, height } = blockMetrics(font, lines);
-  const pad = style.pad;
+  const pad = Math.max(1, clearance);
   const boxW = width + pad * 2, boxH = height + pad * 2;
   if (boxW > size || boxH > size) return null;
 
-  const raster = rasterise(font, lines, width);
+  const ink = rasterise(font, lines, width, boxW, boxH, pad);
 
-  // clearance = ink dilated by one module (used by halo and plate weighting)
-  const near = new Uint8Array(width * height);
-  for (let r = 0; r < height; r++) {
-    for (let c = 0; c < width; c++) {
-      if (!raster.ink[r * width + c]) continue;
+  // Chebyshev distance from the nearest stroke, so one pass classifies every
+  // module in the box: 0 is ink, 1..pad is clearance, beyond that is plate.
+  const dist = chebyshevDistance(ink, boxW, boxH, pad);
+
+  const inkValue = style.invert ? 0 : 1;
+  const bgValue = inkValue ^ 1;
+
+  // What each module in the box wants to be, and how much we care.
+  const cells = [];
+  for (let r = 0; r < boxH; r++) {
+    for (let c = 0; c < boxW; c++) {
+      const d = dist[r * boxW + c];
+      let value, weight;
+      if (d === 0) { value = inkValue; weight = W_INK; }
+      else if (d === 1) { value = bgValue; weight = W_NEAR; }
+      else if (d <= pad) { value = bgValue; weight = W_CLEAR; }
+      else if (style.kind === 'plate') { value = bgValue; weight = W_PLATE; }
+      else continue; // halo: leave the rest as ordinary noise
+      cells.push({ dr: r, dc: c, value, weight });
+    }
+  }
+
+  const centreX = Math.floor((size - boxW) / 2);
+  const centreY = Math.floor((size - boxH) / 2);
+
+  // A module we cannot control only costs us when its fixed value disagrees
+  // with what we want. Function patterns have known values, so this lets the
+  // text settle where the structure already happens to be right -- a full stop
+  // landing on the dark centre of an alignment pattern is free, and snaps
+  // there of its own accord.
+  const costAt = (idx, want, weight) => {
+    if (!pinned[idx]) return 0;
+    if (isFunction[idx]) return functionValue[idx] === want ? 0 : weight;
+    return weight * 0.5; // payload bit: even odds it lands the right way up
+  };
+
+  const place = (x0, y0, ceiling) => {
+    let cost = 0;
+    for (let i = 0; i < cells.length; i++) {
+      const cell = cells[i];
+      cost += costAt((y0 + cell.dr) * size + (x0 + cell.dc), cell.value, cell.weight);
+      if (cost > ceiling) return Infinity;
+    }
+    return cost;
+  };
+
+  let chosen;
+  if (offset) {
+    chosen = {
+      x0: Math.min(Math.max(offset.x, 0), size - boxW),
+      y0: Math.min(Math.max(offset.y, 0), size - boxH),
+    };
+  } else {
+    const tol = Math.max(4, Math.round(0.02 * boxW * boxH));
+    let bestCost = place(centreX, centreY, Infinity);
+    const candidates = [{ x0: centreX, y0: centreY, cost: bestCost }];
+    for (let y0 = 0; y0 + boxH <= size; y0++) {
+      for (let x0 = 0; x0 + boxW <= size; x0++) {
+        if (x0 === centreX && y0 === centreY) continue;
+        const cost = place(x0, y0, bestCost + tol);
+        if (cost === Infinity) continue;
+        if (cost < bestCost) bestCost = cost;
+        candidates.push({ x0, y0, cost });
+      }
+    }
+    // Among positions no worse by a few plate modules -- never by a letterform
+    // module, which costs 1000 -- sit as close to the middle as possible.
+    const viable = candidates.filter(c => c.cost <= bestCost + tol);
+    viable.sort((a, b) =>
+      (Math.abs(a.y0 - centreY) + Math.abs(a.x0 - centreX)) -
+      (Math.abs(b.y0 - centreY) + Math.abs(b.x0 - centreX)));
+    chosen = viable[0];
+  }
+
+  const { x0, y0 } = chosen;
+  const targets = cells.map(cell => ({
+    index: (y0 + cell.dr) * size + (x0 + cell.dc),
+    value: cell.value,
+    weight: cell.weight,
+  }));
+  const stuck = place(x0, y0, Infinity);
+
+  return {
+    targets,
+    rect: { x: x0, y: y0, w: boxW, h: boxH },
+    offset: { x: x0, y: y0 },
+    bounds: { maxX: size - boxW, maxY: size - boxH },
+    font, style, lines, clearance: pad, stuck,
+  };
+}
+
+/** Chebyshev distance to the nearest ink module, saturating just past `cap`. */
+function chebyshevDistance(ink, w, h, cap) {
+  const far = cap + 1;
+  const dist = new Int32Array(w * h).fill(far);
+  let front = [];
+  for (let i = 0; i < ink.length; i++) if (ink[i]) { dist[i] = 0; front.push(i); }
+  for (let d = 1; d <= cap && front.length; d++) {
+    const next = [];
+    for (const i of front) {
+      const r = (i / w) | 0, c = i % w;
       for (let dr = -1; dr <= 1; dr++) {
         for (let dc = -1; dc <= 1; dc++) {
           const rr = r + dr, cc = c + dc;
-          if (rr >= 0 && rr < height && cc >= 0 && cc < width) near[rr * width + cc] = 1;
+          if (rr < 0 || rr >= h || cc < 0 || cc >= w) continue;
+          const j = rr * w + cc;
+          if (dist[j] > d) { dist[j] = d; next.push(j); }
         }
       }
     }
+    front = next;
   }
-
-  const x0 = Math.floor((size - boxW) / 2);
-  const centreY = Math.floor((size - boxH) / 2);
-
-  // score every vertical position by how much of the artwork lands on modules
-  // we cannot control, with a mild pull toward the centre
-  let best = null;
-  const candidates = [];
-  for (let y0 = 0; y0 + boxH <= size; y0++) {
-    let cost = 0;
-    for (let r = 0; r < boxH; r++) {
-      for (let c = 0; c < boxW; c++) {
-        const idx = (y0 + r) * size + (x0 + c);
-        if (!pinned[idx]) continue;
-        const ir = r - pad, ic = c - pad;
-        const inside = ir >= 0 && ir < height && ic >= 0 && ic < width;
-        // a stuck letterform module is far worse than a stuck plate module
-        if (inside && raster.ink[ir * width + ic]) cost += 1000;
-        else if (inside && near[ir * width + ic]) cost += 50;
-        else if (style.pad > 0) cost += 1;
-      }
-    }
-    candidates.push({ y0, cost });
-    if (!best || cost < best.cost) best = { y0, cost };
-  }
-  if (!best) return null;
-
-  // The payload's pinned modules follow the zig-zag, which sweeps column pairs
-  // across the full height -- so row choice barely changes how many are stuck.
-  // Take the lowest cost, then among positions that are no worse by a few
-  // plate modules (never by a letterform module, which costs 1000) sit as
-  // close to the middle as possible.
-  const tol = Math.max(4, Math.round(0.02 * boxW * boxH));
-  const tolerated = candidates.filter(c => c.cost <= best.cost + tol);
-  tolerated.sort((a, b) => Math.abs(a.y0 - centreY) - Math.abs(b.y0 - centreY));
-  const { y0 } = tolerated[0];
-  const targets = [];
-  const light = dark ^ 1;
-  for (let r = 0; r < boxH; r++) {
-    for (let c = 0; c < boxW; c++) {
-      const index = (y0 + r) * size + (x0 + c);
-      const ir = r - pad, ic = c - pad;
-      const inside = ir >= 0 && ir < height && ic >= 0 && ic < width;
-      const isInk = inside && raster.ink[ir * width + ic];
-      const isNear = inside && near[ir * width + ic];
-      if (isInk) targets.push({ index, value: dark, weight: W_INK });
-      else if (isNear && style.pad > 0) targets.push({ index, value: light, weight: W_CLEAR });
-      else if (style.id === 'band') targets.push({ index, value: light, weight: W_PLATE });
-    }
-  }
-  return { targets, rect: { x: x0, y: y0, w: boxW, h: boxH }, font, style, lines, stuck: best.cost };
+  return dist;
 }
+

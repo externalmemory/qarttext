@@ -12,6 +12,7 @@ function pack(r) {
     modules: r.modules, size: r.size, version: r.version, ecl: r.ecl, mask: r.mask,
     encoded: r.encoded, label: r.label, lines: r.lines,
     fontId: r.fontId, styleId: r.styleId, hardWrapped: r.hardWrapped,
+    clearance: r.clearance, offset: r.offset, bounds: r.bounds,
     stats: r.stats,
   };
 }
@@ -24,6 +25,9 @@ self.onmessage = (event) => {
         self.postMessage({ type: 'variant', token, result: pack(result), i, n });
       });
       self.postMessage({ type: 'done', token });
+    } else if (type === 'nudge') {
+      // Re-solve at a fixed version with the text pinned to an exact offset.
+      self.postMessage({ type: 'nudged', token, result: pack(generate(opts)) });
     } else if (type === 'check') {
       const tests = [
         {
@@ -42,8 +46,8 @@ self.onmessage = (event) => {
           key: 'qart',
           name: '3. The real thing',
           note: 'Padding solved to spell the domain name inside the code.',
-          result: generate({ ...opts, fontId: 'lower', styleId: 'band' })
-               ?? generate({ ...opts, fontId: 'micro', styleId: 'band' }),
+          result: generate({ ...opts, fontId: 'lower', styleId: 'plate' })
+               ?? generate({ ...opts, fontId: 'micro', styleId: 'plate' }),
         },
       ];
       for (const t of tests) {

@@ -62,6 +62,16 @@
         </select>
       </label>
       <label class="field">
+        <span>Clearance</span>
+        <select id="clearance">
+          <option value="1">1 module &mdash; tight</option>
+          <option value="2">2 modules</option>
+          <option value="3" selected>3 modules (default)</option>
+          <option value="4">4 modules</option>
+          <option value="5">5 modules &mdash; generous</option>
+        </select>
+      </label>
+      <label class="field">
         <span>Text override</span>
         <input id="label" type="text" spellcheck="false" autocapitalize="off" placeholder="(the domain name)">
       </label>
@@ -72,7 +82,9 @@
 
   <section class="gallery-wrap" id="galleryWrap" hidden>
     <h2>Pick one</h2>
-    <p class="hint">Nine treatments of the same URL. Fonts run across, plate styles down.</p>
+    <p class="hint">Nine treatments of the same URL. Fonts run across, plate styles down.
+      Whitespace is what makes the text readable, so raise <em>Clearance</em> if a variant
+      is fighting the noise around it.</p>
     <div class="gallery" id="gallery"></div>
   </section>
 
@@ -85,6 +97,23 @@
       </figure>
       <div class="detail-side">
         <dl class="stats" id="stats"></dl>
+        <div class="field">
+          <span>Placement <output id="offsetOut"></output></span>
+          <div class="nudge">
+            <button type="button" data-dx="-1" data-dy="-1" title="up and left">&#8598;</button>
+            <button type="button" data-dx="0"  data-dy="-1" title="up">&#8593;</button>
+            <button type="button" data-dx="1"  data-dy="-1" title="up and right">&#8599;</button>
+            <button type="button" data-dx="-1" data-dy="0" title="left">&#8592;</button>
+            <button type="button" id="autoPlace" title="back to the solver's choice">auto</button>
+            <button type="button" data-dx="1"  data-dy="0" title="right">&#8594;</button>
+            <button type="button" data-dx="-1" data-dy="1" title="down and left">&#8601;</button>
+            <button type="button" data-dx="0"  data-dy="1" title="down">&#8595;</button>
+            <button type="button" data-dx="1"  data-dy="1" title="down and right">&#8600;</button>
+          </div>
+          <p class="hint nudge-hint">Each nudge re-solves from scratch. Watch the fidelity figure &mdash;
+            sliding the text so a full stop meets an alignment square, or a stroke meets the
+            timing line, costs nothing and can gain you modules.</p>
+        </div>
         <div class="field">
           <span>Module size <output id="scaleOut">8</output> px</span>
           <input id="scale" type="range" min="2" max="24" value="8">

@@ -215,6 +215,23 @@ button.ghost { background: transparent; color: var(--ink); border-color: var(--l
 .stats { display: grid; grid-template-columns: auto 1fr; gap: 0.25rem 0.9rem; margin: 0; font-family: var(--mono); font-size: 0.75rem; }
 .stats dt { color: var(--dim); }
 .stats dd { margin: 0; overflow-wrap: anywhere; }
+.nudge {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.25rem;
+  max-width: 12rem;
+}
+.nudge button {
+  padding: 0.4rem 0;
+  background: transparent;
+  color: var(--ink);
+  border-color: var(--line);
+  font-size: 0.8rem;
+  line-height: 1.2;
+}
+.nudge button:hover:not(:disabled) { border-color: var(--accent); }
+.nudge-hint { font-size: 0.72rem; margin: 0.5rem 0 0; }
+
 .swatches { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
 .downloads { display: flex; gap: 0.6rem; flex-wrap: wrap; }
 .warn { color: var(--warn); font-size: 0.8rem; margin: 0; }

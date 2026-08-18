@@ -6,7 +6,7 @@ import { applyMask, utf8Bytes, smallestVersion, encodePlain, payloadBits, buildD
 import { Skeleton } from './matrix.js';
 import { solve, pinnedModuleMap, randomFreeBits } from './qart.js';
 import { FONT_BY_ID } from './fonts.js';
-import { STYLE_BY_ID, placeText, wrapText, domainOf, normaliseUrl } from './layout.js';
+import { resolveStyle, placeText, wrapText, domainOf, normaliseUrl, DEFAULT_CLEARANCE, INK_WEIGHT } from './layout.js';
 
 export const DEFAULT_MAX_VERSION = 20;
 
@@ -24,6 +24,8 @@ export function generate({
   maxVersion = DEFAULT_MAX_VERSION,
   versionOverride = null,
   margin = 1,
+  clearance = DEFAULT_CLEARANCE,
+  offset = null,
 }) {
   const encoded = normaliseUrl(url);
   const bytes = utf8Bytes(encoded);
@@ -31,7 +33,7 @@ export function generate({
   if (!label) return null;
 
   const font = FONT_BY_ID[fontId];
-  const style = STYLE_BY_ID[styleId];
+  const style = resolveStyle(styleId);
   if (!font || !style) return null;
 
   const start = versionOverride ?? smallestVersion(ecl, bytes.length);
@@ -45,7 +47,7 @@ export function generate({
     for (let version = start; version <= end; version++) {
       const attempt = attemptVersion({
         version, ecl, bytes, label, font, style, fontId, styleId,
-        maxLines, margin, allowHardWrap, encoded,
+        maxLines, margin, allowHardWrap, encoded, clearance, offset,
       });
       if (!attempt) continue;
       attempt.hardWrapped = allowHardWrap;
@@ -58,9 +60,9 @@ export function generate({
   return best;
 }
 
-function attemptVersion({ version, ecl, bytes, label, font, style, fontId, styleId, maxLines, margin, allowHardWrap, encoded }) {
+function attemptVersion({ version, ecl, bytes, label, font, style, fontId, styleId, maxLines, margin, allowHardWrap, encoded, clearance, offset }) {
   const size = symbolSize(version);
-  const usable = size - 2 * margin - 2 * style.pad;
+  const usable = size - 2 * margin - 2 * clearance;
   if (usable <= 0) return null;
 
   const lines = wrapText(font, label, usable, maxLines, allowHardWrap);
@@ -69,7 +71,11 @@ function attemptVersion({ version, ecl, bytes, label, font, style, fontId, style
   const pin = pinnedModuleMap(version, ecl, bytes.length);
   if (!pin) return null;
 
-  const placed = placeText({ size, pinned: pin.map, fontId, styleId, lines });
+  const placed = placeText({
+    size, pinned: pin.map,
+    isFunction: pin.skeleton.isFunction, functionValue: pin.skeleton.functionValue,
+    fontId, styleId, lines, clearance, offset,
+  });
   if (!placed) return null;
 
   const res = solve({ version, ecl, bytes, targets: placed.targets });
@@ -82,7 +88,7 @@ function attemptVersion({ version, ecl, bytes, label, font, style, fontId, style
   scored.sort((a, b) => (a.weightedMisses - b.weightedMisses) || (a.penalty - b.penalty));
   const bestMask = scored[0];
 
-  const inkTargets = placed.targets.filter(t => t.weight === 3);
+  const inkTargets = placed.targets.filter(t => t.weight === INK_WEIGHT);
   const inkMisses = inkTargets.filter(t => bestMask.modules[t.index] !== t.value).length;
   const fidelity = 1 - bestMask.misses / placed.targets.length;
   // letterform accuracy dominates; ties broken toward smaller symbols
@@ -92,8 +98,8 @@ function attemptVersion({ version, ecl, bytes, label, font, style, fontId, style
     modules: bestMask.modules,
     size, version, ecl, mask: bestMask.mask,
     encoded, label, lines,
-    fontId, styleId, margin,
-    rect: placed.rect,
+    fontId, styleId, margin, clearance: placed.clearance,
+    rect: placed.rect, offset: placed.offset, bounds: placed.bounds,
     stats: {
       freeBits: res.freeBits,
       forced: placed.targets.length,
