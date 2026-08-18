@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Human-readable QR</title>
+<meta name="description" content="QR codes with the domain name legibly written inside them, without spending any error-correction capacity.">
+<meta name="theme-color" content="#101014">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="icon" href="./icons/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="./icons/icon-192.png">
+<link rel="stylesheet" href="./app.css">
+</head>
+<body>
+<header class="masthead">
+  <h1>Human-readable QR</h1>
+  <p class="lede">
+    The domain name, written in a bitmap font, inside the code itself &mdash; and
+    <strong>not</strong> at the cost of error correction. Every code here is a fully
+    valid QR symbol with its redundancy completely intact.
+  </p>
+</header>
+
+<main>
+  <form id="form" class="entry">
+    <label class="field">
+      <span>URL</span>
+      <input id="url" type="text" inputmode="url" spellcheck="false" autocapitalize="off"
+             value="https://departuremono.com/" placeholder="https://example.com/page">
+    </label>
+    <button id="go" type="submit">Generate</button>
+  </form>
+
+  <details class="options" id="options">
+    <summary>Options</summary>
+    <div class="opts-grid">
+      <label class="field">
+        <span>Error correction</span>
+        <select id="ecl">
+          <option value="L">L &mdash; 7% recovery, most room for artwork</option>
+          <option value="M" selected>M &mdash; 15% recovery (default)</option>
+          <option value="Q">Q &mdash; 25% recovery</option>
+          <option value="H">H &mdash; 30% recovery, least room</option>
+        </select>
+      </label>
+      <label class="field">
+        <span>Largest symbol</span>
+        <select id="maxVersion">
+          <option value="10">Version 10 &mdash; 57&times;57</option>
+          <option value="14">Version 14 &mdash; 73&times;73</option>
+          <option value="20" selected>Version 20 &mdash; 97&times;97</option>
+          <option value="27">Version 27 &mdash; 125&times;125</option>
+          <option value="40">Version 40 &mdash; 177&times;177</option>
+        </select>
+      </label>
+      <label class="field">
+        <span>Maximum lines</span>
+        <select id="maxLines">
+          <option value="1">1 &mdash; never wrap</option>
+          <option value="2" selected>2</option>
+          <option value="3">3</option>
+        </select>
+      </label>
+      <label class="field">
+        <span>Text override</span>
+        <input id="label" type="text" spellcheck="false" autocapitalize="off" placeholder="(the domain name)">
+      </label>
+    </div>
+  </details>
+
+  <p class="status" id="status" role="status" aria-live="polite"></p>
+
+  <section class="gallery-wrap" id="galleryWrap" hidden>
+    <h2>Pick one</h2>
+    <p class="hint">Nine treatments of the same URL. Fonts run across, plate styles down.</p>
+    <div class="gallery" id="gallery"></div>
+  </section>
+
+  <section class="detail" id="detail" hidden>
+    <h2 id="detailTitle">Selected</h2>
+    <div class="detail-grid">
+      <figure class="preview">
+        <canvas id="bigCanvas"></canvas>
+        <figcaption id="detailCaption"></figcaption>
+      </figure>
+      <div class="detail-side">
+        <dl class="stats" id="stats"></dl>
+        <div class="field">
+          <span>Module size <output id="scaleOut">8</output> px</span>
+          <input id="scale" type="range" min="2" max="24" value="8">
+        </div>
+        <div class="swatches">
+          <label class="field"><span>Dark</span><input id="dark" type="color" value="#000000"></label>
+          <label class="field"><span>Light</span><input id="light" type="color" value="#ffffff"></label>
+        </div>
+        <p class="warn" id="contrastWarn" hidden>
+          Scanners expect dark modules on a clearly lighter background. This pairing is
+          inverted or too low in contrast, and is likely to fail to read.
+        </p>
+        <div class="downloads">
+          <button id="dlPng" type="button">Download PNG</button>
+          <button id="dlSvg" type="button">Download SVG</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="check" id="check">
+    <h2>Decoder check</h2>
+    <p>
+      This technique rests on one assumption: that a decoder reads the declared
+      number of bytes, stops at the terminator, and never looks at the padding
+      after it. That is what every ZXing-lineage reader does, but it is worth
+      confirming on the scanners you actually care about &mdash; the iOS Camera
+      app and Android&rsquo;s Google Lens. Scan all three below. Each should
+      produce <em>exactly</em> the URL shown beneath it.
+    </p>
+    <button id="runCheck" type="button">Build the three test codes</button>
+    <div class="gallery" id="checkGallery"></div>
+    <div class="verdict" id="verdict" hidden>
+      <h3>Reading the result</h3>
+      <ul>
+        <li><strong>All three correct</strong> &mdash; the technique is safe on that scanner.</li>
+        <li><strong>1 works, 2 fails</strong> &mdash; that decoder inspects padding bytes.
+            Nothing here can be made safe for it; report which scanner it was.</li>
+        <li><strong>1 and 2 work, 3 fails</strong> &mdash; not a padding problem. The plate
+            is confusing the binariser: try a higher error-correction level, a
+            larger module size when printing, or the Bare style.</li>
+        <li><strong>1 fails</strong> &mdash; the scanner, lighting or screen is at fault,
+            not the code.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="about">
+    <h2>How this works</h2>
+    <p>
+      A QR code&rsquo;s Reed&ndash;Solomon code is linear over GF(256), the block
+      interleaving is a permutation, and the mask is a fixed XOR. Composed, the map
+      from <em>data bits</em> to <em>module colours</em> is affine over GF(2).
+    </p>
+    <p>
+      The URL occupies the first few hundred bits. Everything after the four-bit
+      terminator is padding, which decoders never read &mdash; so those bits are free
+      variables. Writing one column per free bit and one row per module we want to
+      control gives a linear system; Gauss&ndash;Jordan elimination over GF(2) solves it.
+      The answer is a genuine codeword that both spells out the URL and paints the
+      picture.
+    </p>
+    <p>
+      Nothing is overwritten and no damage is introduced, so the full error-correction
+      budget survives for real-world wear. This is Russ Cox&rsquo;s
+      <a href="https://research.swtch.com/qart">QArt</a> construction, with the artwork
+      being type rather than an image. Cox bought his free bits by appending junk to the
+      URL; taking them from the padding instead leaves the URL byte-for-byte intact.
+    </p>
+    <p class="caveat">
+      Where a module carries a bit of the URL itself, it cannot be moved &mdash; those
+      few pixels come out wherever the URL puts them. The app reports the count as
+      <em>fidelity</em> and picks the symbol size and position that minimise it,
+      always protecting the letterforms first.
+    </p>
+  </section>
+</main>
+
+<footer>
+  <p>Runs entirely offline. No network calls, no dependencies, no analytics.</p>
+</footer>
+
+<script type="module" src="./app.js"></script>
+</body>
+</html>

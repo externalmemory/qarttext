@@ -1,9 +1,127 @@
-## human-readable-qr
+# human-readable-qr
 
-Generate human readable QR codes like https://research.swtch.com/qart, but instead of an image use the domain name from the URL rendered with bitmap font, e.g.,
+QR codes with the domain name written legibly inside them, in a bitmap font —
+and **without spending any of the error-correction redundancy**.
 
-* https://departuremono.com/
-* https://github.com/urcades/pilot
-* https://damieng.com/blog/2006/palmosfontavailable
+Live app: open `index.html` from any static web server. It is a progressive web
+app with no external dependencies, no build step, and no network calls.
 
-The result should be a progressive Web app with no external dependencies that takes a URL and generates a QR code with a human readable URL inside, without using up any of the redundancy in QR encoding. Maybe several different options, downloadable as PNG or SVG.
+```
+python3 -m http.server 8000     # then visit http://localhost:8000/
+```
+
+![the app icon, which is itself a human-readable QR code](icons/icon-512.png)
+
+## What it does
+
+You give it a URL. It gives you nine treatments of that URL as a QR code, each
+with the domain name rendered in the middle of the symbol, and lets you download
+whichever you prefer as PNG or SVG.
+
+Every code it produces is a **fully valid QR symbol with its error correction
+completely intact**. Nothing is painted over the top and no damage is
+introduced, so the entire correction budget remains available for real-world
+wear: creases, dirt, glare, bad printing.
+
+## How it works
+
+This is Russ Cox's [QArt](https://research.swtch.com/qart) construction, with
+type as the artwork instead of an image.
+
+The trick is that a QR code is a linear object:
+
+- Reed–Solomon encoding is linear over GF(256);
+- splitting into blocks and interleaving them is a permutation;
+- the mask is a fixed XOR.
+
+Compose those and the map from **data bits** to **module colours** is affine
+over GF(2).
+
+The URL occupies the first few hundred data bits: a 4-bit mode indicator, a
+length field, the bytes themselves, then a 4-bit terminator. Everything after
+that terminator is padding, and a conforming decoder never looks at it — it
+reads exactly the declared number of bytes and stops. So every padding bit is a
+free variable.
+
+Write one matrix column per free bit and one row per module you want to control,
+then run Gauss–Jordan elimination over GF(2). The solution is a genuine codeword
+that simultaneously spells out the URL and paints the picture.
+
+Cox bought his free bits by appending junk to the URL. Taking them from the
+padding instead leaves the URL **byte-for-byte identical** to what you typed.
+
+### The one assumption
+
+The whole technique rests on decoders stopping at the terminator and ignoring
+the padding. Every ZXing-lineage reader does this, and the app pins the
+terminator to `0000` so a decoder can never mistake the random padding for
+another data segment.
+
+That said, it is an assumption about other people's software. The app ships a
+**Decoder check** panel that builds three codes — a control with conventional
+padding, the same URL with random padding and no artwork, and the real thing —
+so you can confirm the behaviour on the scanners you care about (iOS Camera,
+Android's Google Lens) rather than take it on trust.
+
+### What it cannot do
+
+Where a module happens to carry a bit of the URL itself, it cannot be moved;
+those pixels come out wherever the URL puts them. The app reports the count as
+*fidelity*, searches symbol sizes and vertical positions to minimise it, and
+always protects the letterforms ahead of the plate behind them. At levels L and
+M the letterforms are typically exact. At level H, where free bits are scarce,
+expect a handful of stuck pixels — the card tells you how many before you pick it.
+
+## Options
+
+| Control | Effect |
+| --- | --- |
+| Error correction | `L` leaves the most room for artwork, `H` the least. `M` is a good default. |
+| Largest symbol | Caps how big the code may grow. Bigger symbols give cleaner text. |
+| Maximum lines | Whether long domains may wrap. Breaks are made at dots wherever possible. |
+| Text override | Draw something other than the domain. |
+
+Three fonts (`Micro 3×5`, `Pixel 5×7`, `Lower 5×8`, all authored for this
+project) times three plate styles (`Plate`, `Halo`, `Bare`) make the nine
+variants.
+
+## Layout
+
+```
+index.html            the app shell
+app.css  app.js       interface
+worker.js             runs generation off the main thread
+sw.js  manifest.webmanifest   offline shell
+src/qr.js             GF(256), Reed–Solomon, version and block tables
+src/matrix.js         function patterns, placement order, masks, penalty
+src/encode.js         byte-mode payload, interleaving, module placement
+src/qart.js           the GF(2) solver — the heart of it
+src/fonts.js          bitmap fonts
+src/layout.js         URL to label, wrapping, target selection
+src/generate.js       version search and mask choice
+src/variants.js       the gallery
+src/render.js         SVG and PNG output
+scripts/make-icons.mjs  builds the icons using the app's own encoder
+```
+
+The icon is itself a human-readable QR code, generated by this codebase.
+
+## Verification
+
+The encoder was checked against the ISO/IEC 18004 reference vectors (block
+capacities for all 40 versions, the four format-information strings, and the
+Reed–Solomon codewords for the standard test message) and round-tripped through
+an independent decoder that re-reads the rendered grid and confirms every
+Reed–Solomon syndrome is zero — that is, the symbol is not merely readable but
+carries its full, unspent correction capacity.
+
+A sweep of 380 combinations (10 URLs × 4 correction levels × 3 fonts × 3 styles,
+plus controls) decodes to the exact input URL with zero syndromes and zero
+SVG/canvas mismatches.
+
+## Credits
+
+- Russ Cox, [QArt Codes](https://research.swtch.com/qart), for the construction.
+- Departure Mono, PalmOS system fonts and similar pixel faces were the reference
+  for the letterforms; the glyph tables here are original, drawn to the QR
+  module grid.
