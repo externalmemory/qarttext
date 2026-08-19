@@ -71,19 +71,24 @@ export function normaliseUrl(input) {
 
 /**
  * Breaks text into at most `maxLines` lines no wider than `maxWidth` modules.
- * Prefers breaking after a dot, so labels stay whole; falls back to hard
- * character wrapping.
+ * Falls back to hard character wrapping.
+ *
+ * Breaks are taken after a dot or a hyphen, both of which stay at the end of
+ * the line where they read as deliberate. Hyphens matter more than they look:
+ * without them a label like "constructive-calculator." is one indivisible
+ * chunk, no arrangement narrower than that chunk exists at any line count, and
+ * the only way to fit the text is a far larger symbol.
  */
 export function wrapText(font, text, maxWidth, maxLines, allowHardWrap = true) {
   if (measure(font, text) <= maxWidth) return [text];
   if (maxLines < 2) return null;
 
-  // dot-aware chunks: "departuremono." + "com"
+  // breakable chunks: "constructive-" + "calculator." + "dimview." + "org"
   const chunks = [];
   let cur = '';
   for (const ch of text) {
     cur += ch;
-    if (ch === '.') { chunks.push(cur); cur = ''; }
+    if (ch === '.' || ch === '-') { chunks.push(cur); cur = ''; }
   }
   if (cur) chunks.push(cur);
 

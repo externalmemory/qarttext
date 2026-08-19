@@ -81,7 +81,7 @@ often costs you a larger code but buys back fidelity.
 | Control | Effect |
 | --- | --- |
 | Error correction | `L` leaves the most room for artwork, `H` the least. `M` is a good default. |
-| Maximum lines | Whether long domains may wrap. Breaks are made at dots wherever possible. |
+| Maximum lines | How many lines a long domain may wrap onto. Breaks are taken after a dot or a hyphen. |
 | Clearance | Modules of whitespace between the letterforms and the surrounding noise. Default 2. |
 | Text override | Draw something other than the domain. |
 
@@ -98,6 +98,14 @@ how far the forced region extends, and which way round the letters run:
 
 Whitespace is what makes the text readable, far more than the choice of font.
 Clearance of 1 leaves the letterforms fighting the surrounding noise.
+
+Line breaks are taken after a dot or a hyphen, both of which stay at the end of
+the line where they read as deliberate. Hyphens matter more than they look:
+without them a label such as `constructive-calculator.` is a single indivisible
+chunk, so no arrangement narrower than that chunk exists at *any* line count and
+the only way to fit the text is a much larger symbol. Allowing hyphen breaks
+took `constructive-calculator.dimview.org` at three lines from a 137-module
+symbol down to 89.
 
 Text is drawn in **whatever case you type**. The label keeps the case of the
 host as entered — `DepartureMono.com` stays mixed — which means the host is
