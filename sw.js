@@ -1,7 +1,16 @@
-// Cache-first shell so the app works with no network at all.
-// Bump CACHE when any listed file changes.
+// Offline shell.
+//
+// Deliberately network-first, not cache-first. A cache-first worker with a
+// background refresh always shows the *previous* deploy on the first load
+// after a change, and can serve a stale script alongside fresh markup, which
+// breaks in confusing ways. Correctness beats the few milliseconds that
+// serving from cache would save on an app this small.
+//
+// Bump BUILD whenever the shell changes; it names the cache and is shown in
+// the page footer so it is obvious which version is actually loaded.
+const BUILD = '2026-08-19.1';
+const CACHE = `hrqr-${BUILD}`;
 
-const CACHE = 'hrqr-v4';
 const SHELL = [
   './',
   './index.html',
@@ -27,7 +36,8 @@ const SHELL = [
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE)
-      .then(cache => cache.addAll(SHELL))
+      // bypass the HTTP cache: precaching a stale copy would defeat the point
+      .then(cache => cache.addAll(SHELL.map(url => new Request(url, { cache: 'reload' }))))
       .then(() => self.skipWaiting())
   );
 });
@@ -44,18 +54,16 @@ self.addEventListener('fetch', (event) => {
   const { request } = event;
   if (request.method !== 'GET' || new URL(request.url).origin !== self.location.origin) return;
   event.respondWith(
-    caches.match(request).then(hit => {
-      if (hit) {
-        // refresh in the background so a redeploy is picked up next visit
-        fetch(request).then(res => {
-          if (res.ok) caches.open(CACHE).then(c => c.put(request, res.clone()));
-        }).catch(() => {});
-        return hit;
-      }
-      return fetch(request).then(res => {
-        if (res.ok) { const copy = res.clone(); caches.open(CACHE).then(c => c.put(request, copy)); }
-        return res;
-      }).catch(() => caches.match('./index.html'));
-    })
+    fetch(request)
+      .then(response => {
+        if (response.ok) {
+          const copy = response.clone();
+          caches.open(CACHE).then(cache => cache.put(request, copy));
+        }
+        return response;
+      })
+      // offline: fall back to whatever was cached, and to the shell for navigation
+      .catch(() => caches.match(request).then(hit =>
+        hit ?? (request.mode === 'navigate' ? caches.match('./index.html') : undefined)))
   );
 });

@@ -423,9 +423,26 @@ els.runCheck.addEventListener('click', () => {
 
 // ------------------------------------------------------------------ offline
 
+// Keep in step with BUILD in sw.js; shown in the footer so it is obvious which
+// version is loaded when something looks out of date.
+const BUILD = '2026-08-19.1';
+document.getElementById('build').textContent = BUILD;
+
 if ('serviceWorker' in navigator) {
+  // If a worker was already in charge and a new one takes over, the page is
+  // running the old scripts: reload once so a deploy is never a version behind.
+  let reloading = false;
+  if (navigator.serviceWorker.controller) {
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (reloading) return;
+      reloading = true;
+      location.reload();
+    });
+  }
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js').catch(() => { /* offline is a bonus, not a requirement */ });
+    navigator.serviceWorker.register('./sw.js')
+      .then(reg => reg.update())
+      .catch(() => { /* offline is a bonus, not a requirement */ });
   });
 }
 
