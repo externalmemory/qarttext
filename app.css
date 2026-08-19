@@ -146,19 +146,48 @@ button.ghost { background: transparent; color: var(--ink); border-color: var(--l
 
 .hint { color: var(--dim); font-size: 0.875rem; margin: 0 0 1rem; }
 
-.gallery {
+/* Fonts across, extent and inversion down. */
+.gallery-scroll { overflow-x: auto; }
+table.gallery {
+  border-collapse: collapse;
+  width: 100%;
+  min-width: 30rem;
+}
+table.gallery th {
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  color: var(--dim);
+  text-align: left;
+  padding: 0.4rem 0.5rem;
+  white-space: nowrap;
+}
+table.gallery thead th { text-align: center; border-bottom: 1px solid var(--line); }
+table.gallery tbody th { vertical-align: middle; border-right: 1px solid var(--line); }
+table.gallery td {
+  padding: 0.35rem;
+  vertical-align: top;
+  color: var(--dim);
+  font-family: var(--mono);
+  font-size: 0.72rem;
+}
+
+/* The check panel still uses a plain grid. */
+.gallery.grid {
   display: grid;
   gap: 0.9rem;
   grid-template-columns: repeat(auto-fill, minmax(12.5rem, 1fr));
 }
-/* two per row on a phone rather than one very tall column */
+
 @media (max-width: 34rem) {
-  .gallery { gap: 0.6rem; grid-template-columns: repeat(auto-fill, minmax(9.5rem, 1fr)); }
-  .card { padding: 0.55rem; }
-  .card .meta { font-size: 0.62rem; }
+  table.gallery { min-width: 26rem; }
+  .card { padding: 0.4rem; }
+  .card .meta { font-size: 0.6rem; }
 }
 
 .card {
+  width: 100%;
   display: flex;
   flex-direction: column;
   gap: 0.55rem;
@@ -202,7 +231,22 @@ button.ghost { background: transparent; color: var(--ink); border-color: var(--l
   border: 1px solid var(--line);
   border-radius: 8px;
   background: #fff;
+  cursor: crosshair;
 }
+
+/* Key for the editing preview. */
+.key { display: inline-block; margin-top: 0.4rem; line-height: 1.9; }
+.chip {
+  display: inline-block;
+  width: 0.7rem; height: 0.7rem;
+  vertical-align: -0.05rem;
+  border: 1px solid var(--line);
+}
+.chip + .chip { margin-left: -1px; margin-right: 0.25rem; }
+.chip.fixed-dark { background: #000; }
+.chip.fixed-light { background: #fff; }
+.chip.free-dark { background: #6b6b6b; }
+.chip.free-light { background: #d6d6d6; }
 .preview figcaption {
   font-family: var(--mono);
   font-size: 0.72rem;

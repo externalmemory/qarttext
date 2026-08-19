@@ -6,7 +6,7 @@ import { applyMask, utf8Bytes, smallestVersion, encodePlain, payloadBits, buildD
 import { Skeleton } from './matrix.js';
 import { solve, pinnedModuleMap, randomFreeBits } from './qart.js';
 import { FONT_BY_ID } from './fonts.js';
-import { resolveStyle, placeText, wrapText, domainOf, normaliseUrl, DEFAULT_CLEARANCE, INK_WEIGHT } from './layout.js';
+import { resolveStyle, placeText, wrapText, domainOf, normaliseUrl, DEFAULT_CLEARANCE, INK_WEIGHT, OVERRIDE_WEIGHT } from './layout.js';
 
 // How many workable symbol sizes to try before settling for the best so far.
 // There is no fixed ceiling imposed by scanners: a large symbol reads fine if
@@ -34,6 +34,7 @@ export function generate({
   margin = 1,
   clearance = DEFAULT_CLEARANCE,
   offset = null,
+  overrides = null,
 }) {
   const encoded = normaliseUrl(url);
   const bytes = utf8Bytes(encoded);
@@ -57,7 +58,7 @@ export function generate({
       for (let version = start; version <= end; version++) {
         const attempt = attemptVersion({
           version, ecl, bytes, label, font, style, fontId, styleId,
-          maxLines, margin, allowHardWrap, encoded, clearance, offset, minRatio,
+          maxLines, margin, allowHardWrap, encoded, clearance, offset, minRatio, overrides,
         });
         if (!attempt) continue;
         attempt.hardWrapped = allowHardWrap;
@@ -72,7 +73,7 @@ export function generate({
   return best;
 }
 
-function attemptVersion({ version, ecl, bytes, label, font, style, fontId, styleId, maxLines, margin, allowHardWrap, encoded, clearance, offset, minRatio = 0 }) {
+function attemptVersion({ version, ecl, bytes, label, font, style, fontId, styleId, maxLines, margin, allowHardWrap, encoded, clearance, offset, minRatio = 0, overrides = null }) {
   const size = symbolSize(version);
   const usable = size - 2 * margin - 2 * clearance;
   if (usable <= 0) return null;
@@ -92,7 +93,19 @@ function attemptVersion({ version, ecl, bytes, label, font, style, fontId, style
   // Cheap rejection, before paying for the elimination.
   if (pin.freeBits < placed.targets.length * minRatio) return null;
 
-  const res = solve({ version, ecl, bytes, targets: placed.targets });
+  // Hand-set modules replace whatever the layout wanted there and outrank it,
+  // so a module the reader has clicked survives even when freedom runs short.
+  let targets = placed.targets;
+  if (overrides && overrides.length) {
+    const byIndex = new Map(targets.map(t => [t.index, t]));
+    for (const o of overrides) {
+      if (pin.map[o.index]) continue; // that module cannot be moved at all
+      byIndex.set(o.index, { index: o.index, value: o.value, weight: OVERRIDE_WEIGHT });
+    }
+    targets = [...byIndex.values()];
+  }
+
+  const res = solve({ version, ecl, bytes, targets });
   if (!res) return null;
 
   const scored = res.results.map(r => {
@@ -102,7 +115,7 @@ function attemptVersion({ version, ecl, bytes, label, font, style, fontId, style
   scored.sort((a, b) => (a.weightedMisses - b.weightedMisses) || (a.penalty - b.penalty));
   const bestMask = scored[0];
 
-  const inkTargets = placed.targets.filter(t => t.weight === INK_WEIGHT);
+  const inkTargets = targets.filter(t => t.weight === INK_WEIGHT);
   const inkMisses = inkTargets.filter(t => bestMask.modules[t.index] !== t.value).length;
   const fidelity = 1 - bestMask.misses / placed.targets.length;
   // letterform accuracy dominates; ties broken toward smaller symbols
@@ -114,6 +127,9 @@ function attemptVersion({ version, ecl, bytes, label, font, style, fontId, style
     encoded, label, lines,
     fontId, styleId, margin, clearance: placed.clearance,
     rect: placed.rect, offset: placed.offset, bounds: placed.bounds,
+    // 1 where a module can still be changed; the editor needs this to know
+    // which clicks are possible and to colour the preview
+    editable: pin.map.map(v => v ^ 1),
     stats: {
       freeBits: res.freeBits,
       forced: placed.targets.length,

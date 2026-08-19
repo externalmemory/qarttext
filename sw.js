@@ -1,7 +1,7 @@
 // Cache-first shell so the app works with no network at all.
 // Bump CACHE when any listed file changes.
 
-const CACHE = 'hrqr-v3';
+const CACHE = 'hrqr-v4';
 const SHELL = [
   './',
   './index.html',

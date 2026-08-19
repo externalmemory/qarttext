@@ -2,14 +2,17 @@
 
 import { FONT_BY_ID, glyphFor, measure } from './fonts.js';
 
+// Two choices, crossed: how far the forced region extends, and which way round
+// the letters run. Rows of the gallery, against fonts as columns.
 export const STYLES = [
   { id: 'plate', name: 'Plate', note: 'Light plate behind the text.', kind: 'plate', invert: false },
+  { id: 'plate-inverse', name: 'Plate, inverted', note: 'Dark plate, light letters.', kind: 'plate', invert: true },
   { id: 'halo', name: 'Halo', note: 'Clearance only, noise beyond it.', kind: 'halo', invert: false },
-  { id: 'inverse', name: 'Inverse', note: 'Dark plate, light letters.', kind: 'plate', invert: true },
+  { id: 'halo-inverse', name: 'Halo, inverted', note: 'Light letters, dark clearance.', kind: 'halo', invert: true },
 ];
 export const STYLE_BY_ID = Object.fromEntries(STYLES.map(s => [s.id, s]));
 // earlier names, so saved links and old settings keep working
-const STYLE_ALIASES = { band: 'plate', glyph: 'halo' };
+const STYLE_ALIASES = { band: 'plate', glyph: 'halo', inverse: 'plate-inverse' };
 export const resolveStyle = (id) => STYLE_BY_ID[id] ?? STYLE_BY_ID[STYLE_ALIASES[id]] ?? STYLES[0];
 
 export const DEFAULT_CLEARANCE = 2;
@@ -21,6 +24,10 @@ const W_INK = 1000;   // the letterforms themselves
 const W_NEAR = 50;    // the module immediately around each stroke
 const W_CLEAR = 8;    // the rest of the requested clearance
 const W_PLATE = 1;    // plate area beyond the clearance
+const W_PINNED = 5000; // a module the reader has clicked; outranks everything
+
+/** Weight marking a hand-set module, so it survives when freedom runs short. */
+export const OVERRIDE_WEIGHT = W_PINNED;
 
 /** Weight marking a letterform module, so callers can count them. */
 export const INK_WEIGHT = W_INK;

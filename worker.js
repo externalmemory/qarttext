@@ -12,7 +12,7 @@ function pack(r) {
     modules: r.modules, size: r.size, version: r.version, ecl: r.ecl, mask: r.mask,
     encoded: r.encoded, label: r.label, lines: r.lines,
     fontId: r.fontId, styleId: r.styleId, hardWrapped: r.hardWrapped,
-    clearance: r.clearance, offset: r.offset, bounds: r.bounds,
+    clearance: r.clearance, offset: r.offset, bounds: r.bounds, editable: r.editable,
     stats: r.stats,
   };
 }

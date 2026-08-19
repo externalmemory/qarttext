@@ -26,7 +26,7 @@
     <label class="field">
       <span>URL</span>
       <input id="url" type="text" inputmode="url" spellcheck="false" autocapitalize="off"
-             value="https://departuremono.com/" placeholder="https://example.com/page">
+             value="https://example.com/" placeholder="https://example.com/page">
     </label>
     <button id="go" type="submit">Generate</button>
   </form>
@@ -72,19 +72,29 @@
 
   <section class="gallery-wrap" id="galleryWrap" hidden>
     <h2>Pick one</h2>
-    <p class="hint">Nine treatments of the same URL. Fonts run across, plate styles down.
+    <p class="hint">Twelve treatments of the same URL: fonts across, extent and inversion down.
       Whitespace is what makes the text readable, so raise <em>Clearance</em> if a variant
       is fighting the noise around it. Symbol size is chosen automatically; each card
       shows how wide that code needs to be printed.</p>
-    <div class="gallery" id="gallery"></div>
+    <div class="gallery-scroll">
+      <table class="gallery" id="gallery"></table>
+    </div>
   </section>
 
   <section class="detail" id="detail" hidden>
     <h2 id="detailTitle">Selected</h2>
     <div class="detail-grid">
       <figure class="preview">
-        <canvas id="bigCanvas"></canvas>
-        <figcaption id="detailCaption"></figcaption>
+        <canvas id="bigCanvas" width="300" height="300"></canvas>
+        <figcaption>
+          <span id="detailCaption"></span><br>
+          <span class="key">
+            <span class="chip fixed-dark"></span><span class="chip fixed-light"></span> fixed &mdash;
+            function patterns and modules carrying the URL itself
+            &nbsp; <span class="chip free-dark"></span><span class="chip free-light"></span> free &mdash;
+            click any of these to flip it; the solver rebuilds the rest
+          </span>
+        </figcaption>
       </figure>
       <div class="detail-side">
         <dl class="stats" id="stats"></dl>
@@ -110,17 +120,20 @@
           <input id="scale" type="range" min="2" max="24" value="8">
         </div>
         <div class="swatches">
-          <label class="field"><span>Dark</span><input id="dark" type="color" value="#000000"></label>
-          <label class="field"><span>Light</span><input id="light" type="color" value="#ffffff"></label>
+          <label class="field"><span>Export dark</span><input id="dark" type="color" value="#000000"></label>
+          <label class="field"><span>Export light</span><input id="light" type="color" value="#ffffff"></label>
         </div>
         <p class="warn" id="contrastWarn" hidden>
           Scanners expect dark modules on a clearly lighter background. This pairing is
           inverted or too low in contrast, and is likely to fail to read.
         </p>
+        <p class="hint" id="editState"></p>
         <div class="downloads">
           <button id="dlPng" type="button">Download PNG</button>
           <button id="dlSvg" type="button">Download SVG</button>
+          <button id="clearEdits" type="button" class="ghost" hidden>Undo edits</button>
         </div>
+        <p class="hint">Exports contain only the two colours above &mdash; never the greys, which mark editable modules in the preview only.</p>
       </div>
     </div>
   </section>
@@ -136,7 +149,7 @@
       produce <em>exactly</em> the URL shown beneath it.
     </p>
     <button id="runCheck" type="button">Build the three test codes</button>
-    <div class="gallery" id="checkGallery"></div>
+    <div class="gallery grid" id="checkGallery"></div>
     <div class="verdict" id="verdict" hidden>
       <h3>Reading the result</h3>
       <ul>

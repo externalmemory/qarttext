@@ -85,14 +85,16 @@ often costs you a larger code but buys back fidelity.
 | Clearance | Modules of whitespace between the letterforms and the surrounding noise. Default 2. |
 | Text override | Draw something other than the domain. |
 
-Three fonts, all authored for this project, times three styles make the nine
-variants. The fonts are `Micro 3×5` and `Pixel 5×7`, which hold a single case,
-and `Mixed 5×8`, which has real upper and lower case with descenders. The
-styles are:
+Three fonts, all authored for this project, times four styles make the twelve
+variants, laid out as a table with fonts across and styles down. The fonts are
+`Micro 3×5` and `Pixel 5×7`, which hold a single case, and `Mixed 5×8`, which
+has real upper and lower case with descenders. The styles cross two choices —
+how far the forced region extends, and which way round the letters run:
 
-- **Plate** — a light rectangle behind the text.
-- **Halo** — clearance around the strokes only; ordinary noise beyond it.
-- **Inverse** — a dark plate with light letters.
+|  | upright | inverted |
+| --- | --- | --- |
+| **Plate** — a filled rectangle behind the text | light plate, dark letters | dark plate, light letters |
+| **Halo** — clearance around the strokes only, noise beyond | light clearance, dark letters | dark clearance, light letters |
 
 Whitespace is what makes the text readable, far more than the choice of font.
 Clearance of 1 leaves the letterforms fighting the surrounding noise.
@@ -152,6 +154,25 @@ worst plate fidelity from 87.6% to 95.7%.
 
 The detail panel exposes a nudge pad if you want to place the text by hand;
 each nudge re-solves from scratch, and directions with no room are greyed out.
+
+## Editing by hand
+
+The large preview is editable. Click any module and it flips; the solver then
+re-runs and rebuilds everything else around it, so the result is still a valid
+codeword with its error correction untouched. Hand-set modules outrank the
+letterforms in the priority ladder, so a click always wins — what gives way is
+the plate behind it.
+
+The preview is colour-coded to show what a click can do:
+
+| | dark | light |
+| --- | --- | --- |
+| **fixed** — function patterns, and modules carrying bits of the URL itself | black | white |
+| **free** — anything the solver can move | dark grey | light grey |
+
+Clicking a fixed module is refused rather than silently ignored. The greys are
+a guide for editing only: the gallery images and the exported PNG and SVG are
+strictly black and white.
 
 ### Rotation: measured, and rejected
 
@@ -224,6 +245,10 @@ Android camera apps.
 ## Credits
 
 - Russ Cox, [QArt Codes](https://research.swtch.com/qart), for the construction.
-- Departure Mono, PalmOS system fonts and similar pixel faces were the reference
-  for the letterforms; the glyph tables here are original, drawn to the QR
-  module grid.
+
+Reference faces for the letterforms. The glyph tables in `src/fonts.js` are
+original, drawn to the QR module grid, but these are what they are modelled on:
+
+- [Departure Mono](https://departuremono.com/)
+- [urcades/pilot](https://github.com/urcades/pilot)
+- [PalmOS system fonts](https://damieng.com/blog/palmosfontavailable)

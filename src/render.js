@@ -38,6 +38,62 @@ function escapeXml(s) {
   return String(s).replace(/[<>&"']/g, c => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;', "'": '&apos;' }[c]));
 }
 
+// ---------------------------------------------------------- editing view --
+
+function parseHex(hex) {
+  const n = parseInt(hex.slice(1), 16);
+  return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+}
+function mix(a, b, t) {
+  const [ar, ag, ab] = parseHex(a), [br, bg, bb] = parseHex(b);
+  const c = (x, y) => Math.round(x + (y - x) * t);
+  return `rgb(${c(ar, br)},${c(ag, bg)},${c(ab, bb)})`;
+}
+
+/**
+ * Preview used for editing. Modules that cannot be changed -- function
+ * patterns, and modules carrying bits of the URL itself -- are drawn in full
+ * black and white; everything the solver is free to move is drawn in muted
+ * greys derived from the same pair, so the two readings stay comparable.
+ * Exported PNG and SVG are always plain black and white.
+ */
+export function drawEditable(result, canvas, {
+  scale = 8, quiet = DEFAULT_QUIET, dark = '#000000', light = '#ffffff',
+} = {}) {
+  const { modules, size, editable } = result;
+  const total = size + quiet * 2;
+  canvas.width = total * scale;
+  canvas.height = total * scale;
+  const ctx = canvas.getContext('2d');
+  ctx.imageSmoothingEnabled = false;
+  ctx.fillStyle = light;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  const softDark = mix(dark, light, 0.42);
+  const softLight = mix(light, dark, 0.16);
+  for (let r = 0; r < size; r++) {
+    for (let c = 0; c < size; c++) {
+      const i = r * size + c;
+      const on = modules[i] === 1;
+      const free = editable && editable[i] === 1;
+      if (!on && !free) continue; // fixed light: the background already
+      ctx.fillStyle = on ? (free ? softDark : dark) : softLight;
+      ctx.fillRect((c + quiet) * scale, (r + quiet) * scale, scale, scale);
+    }
+  }
+  return canvas;
+}
+
+/** Which module a point on an editing canvas falls on, or null if outside. */
+export function moduleAt(result, canvas, clientX, clientY, quiet = DEFAULT_QUIET) {
+  const rect = canvas.getBoundingClientRect();
+  const total = result.size + quiet * 2;
+  const c = Math.floor(((clientX - rect.left) / rect.width) * total) - quiet;
+  const r = Math.floor(((clientY - rect.top) / rect.height) * total) - quiet;
+  if (r < 0 || c < 0 || r >= result.size || c >= result.size) return null;
+  return r * result.size + c;
+}
+
 export function drawToCanvas(result, canvas, {
   scale = 8, quiet = DEFAULT_QUIET, dark = '#000000', light = '#ffffff',
 } = {}) {

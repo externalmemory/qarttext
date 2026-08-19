@@ -1,12 +1,13 @@
-import { FONT_BY_ID } from './src/fonts.js';
-import { STYLE_BY_ID } from './src/layout.js';
-import { toSVG, drawToCanvas, scaleFor, svgBlob, canvasToPngBlob, filenameFor, minPrintWidthMm, MM_PER_MODULE, DEFAULT_QUIET } from './src/render.js';
+import { FONTS, FONT_BY_ID } from './src/fonts.js';
+import { STYLES, STYLE_BY_ID } from './src/layout.js';
+import { toSVG, drawToCanvas, drawEditable, moduleAt, scaleFor, svgBlob, canvasToPngBlob, filenameFor, minPrintWidthMm, MM_PER_MODULE, DEFAULT_QUIET } from './src/render.js';
 
 const $ = (id) => document.getElementById(id);
 const els = {
   form: $('form'), url: $('url'), go: $('go'),
   ecl: $('ecl'), maxLines: $('maxLines'), label: $('label'),
   clearance: $('clearance'), offsetOut: $('offsetOut'), autoPlace: $('autoPlace'),
+  editState: $('editState'), clearEdits: $('clearEdits'),
   status: $('status'), galleryWrap: $('galleryWrap'), gallery: $('gallery'),
   detail: $('detail'), detailTitle: $('detailTitle'), detailCaption: $('detailCaption'),
   bigCanvas: $('bigCanvas'), stats: $('stats'),
@@ -18,6 +19,9 @@ const els = {
 let selected = null;
 let selectedCard = null;
 let token = 0;
+/** Modules the reader has flipped by hand: module index -> wanted value. */
+const overrides = new Map();
+const cells = new Map();
 
 // --------------------------------------------------------------- the worker
 
@@ -81,6 +85,39 @@ function colours() {
 
 // ------------------------------------------------------------------ gallery
 
+// Fonts across, extent and inversion down. The skeleton goes up first so
+// results can drop into the right cell as they arrive.
+function buildTable() {
+  const thead = document.createElement('thead');
+  const head = document.createElement('tr');
+  head.append(document.createElement('td'));
+  for (const f of FONTS) {
+    const th = document.createElement('th');
+    th.scope = 'col';
+    th.textContent = f.name;
+    head.append(th);
+  }
+  thead.append(head);
+
+  const tbody = document.createElement('tbody');
+  cells.clear();
+  for (const style of STYLES) {
+    const tr = document.createElement('tr');
+    const th = document.createElement('th');
+    th.scope = 'row';
+    th.textContent = style.name;
+    tr.append(th);
+    for (const f of FONTS) {
+      const td = document.createElement('td');
+      td.textContent = '…';
+      cells.set(`${f.id}-${style.id}`, td);
+      tr.append(td);
+    }
+    tbody.append(tr);
+  }
+  els.gallery.replaceChildren(thead, tbody);
+}
+
 function variantName(r) {
   const font = FONT_BY_ID[r.fontId], style = STYLE_BY_ID[r.styleId];
   return `${style?.name ?? r.styleId} · ${font?.name ?? r.fontId}`;
@@ -95,8 +132,7 @@ function makeCard(r) {
   if (r.unfit || !r.modules) {
     card.classList.add('unfit');
     card.disabled = true;
-    card.innerHTML = `<div class="name">${variantName(r)}</div>
-      <div class="meta">${r.error ? 'failed' : 'will not fit at this size'}</div>`;
+    card.innerHTML = `<div class="meta">${r.error ? 'failed' : 'will not fit'}</div>`;
     return card;
   }
 
@@ -104,9 +140,6 @@ function makeCard(r) {
   drawToCanvas(r, canvas, { scale: scaleFor(r.size, 320), quiet: DEFAULT_QUIET, ...colours() });
 
   const perfect = r.stats.inkMisses === 0;
-  const name = document.createElement('div');
-  name.className = 'name';
-  name.textContent = variantName(r);
   const meta = document.createElement('div');
   meta.className = 'meta';
   meta.innerHTML = `v${r.version}-${r.ecl} &middot; ${r.size}&times;${r.size} &middot; &ge;${minPrintWidthMm(r)}&thinsp;mm<br>`
@@ -115,12 +148,13 @@ function makeCard(r) {
     + `</span> &middot; ${(r.stats.fidelity * 100).toFixed(1)}% plate`
     + (r.hardWrapped ? '<br>broken mid-label' : '');
 
-  card.append(canvas, name, meta);
+  card.append(canvas, meta);
   card.addEventListener('click', () => select(r, card));
   return card;
 }
 
-function select(r, card) {
+function select(r, card, keepEdits = false) {
+  if (!keepEdits && (!selected || selected.id !== r.id || selected.size !== r.size)) overrides.clear();
   selected = r;
   if (card !== undefined) selectedCard = card;
   for (const c of els.gallery.querySelectorAll('.card')) c.setAttribute('aria-pressed', 'false');
@@ -147,7 +181,38 @@ function select(r, card) {
     ? `x ${r.offset.x} of ${r.bounds.maxX}, y ${r.offset.y} of ${r.bounds.maxY}`
     : '';
   setNudgeEnabled(true);
+  showEditState();
 }
+
+// ------------------------------------------------------------------ editing
+
+function showEditState(message = null) {
+  const n = overrides.size;
+  els.clearEdits.hidden = n === 0;
+  els.editState.textContent = message
+    ?? (n === 0 ? 'Click a grey module in the preview to flip it.'
+                : `${n} module${n === 1 ? '' : 's'} set by hand.`);
+}
+
+els.bigCanvas.addEventListener('click', (event) => {
+  if (!selected) return;
+  const index = moduleAt(selected, els.bigCanvas, event.clientX, event.clientY);
+  if (index === null) return;
+  if (!selected.editable?.[index]) {
+    showEditState('That module is fixed: it is a function pattern, or it carries a bit of the URL.');
+    return;
+  }
+  // Flipping one module means re-solving; the rest of the code moves with it.
+  overrides.set(index, selected.modules[index] ^ 1);
+  showEditState('Re-solving…');
+  replace({ offset: selected.offset, versionOverride: selected.version });
+});
+
+els.clearEdits.addEventListener('click', () => {
+  if (!selected || overrides.size === 0) return;
+  overrides.clear();
+  replace({ offset: selected.offset, versionOverride: selected.version });
+});
 
 // ---------------------------------------------------------------- placement
 
@@ -183,7 +248,9 @@ function replace(extra) {
   setNudgeEnabled(false);
   send({
     type: 'nudge', token: tk, ...readOptions(),
-    fontId: selected.fontId, styleId: selected.styleId, ...extra,
+    fontId: selected.fontId, styleId: selected.styleId,
+    overrides: [...overrides].map(([index, value]) => ({ index, value })),
+    ...extra,
   }, (msg) => {
     if (msg.token !== tk) return;
     setNudgeEnabled(true);
@@ -195,7 +262,10 @@ function replace(extra) {
         painted.set(canvas, msg.result);
       }
     }
-    select(msg.result, undefined);
+    select(msg.result, undefined, true);
+    // Report any click the solver could not honour rather than silently losing it.
+    const ignored = [...overrides].filter(([i, v]) => msg.result.modules[i] !== v).length;
+    showEditState(ignored ? `${overrides.size} set by hand, ${ignored} could not be honoured.` : null);
   });
 }
 
@@ -210,7 +280,7 @@ function redrawBig() {
   if (!selected) return;
   const scale = Number(els.scale.value);
   els.scaleOut.textContent = scale;
-  drawToCanvas(selected, els.bigCanvas, { scale, quiet: DEFAULT_QUIET, ...colours() });
+  drawEditable(selected, els.bigCanvas, { scale, quiet: DEFAULT_QUIET, ...colours() });
   els.contrastWarn.hidden = contrastRatio(els.dark.value, els.light.value) >= 3;
 }
 
@@ -280,8 +350,9 @@ function run() {
 
   const tk = ++token;
   els.go.disabled = true;
-  els.gallery.replaceChildren();
+  buildTable();
   painted.clear();
+  overrides.clear();
   els.galleryWrap.hidden = false;
   els.detail.hidden = true;
   selected = null;
@@ -296,7 +367,7 @@ function run() {
       const card = makeCard(msg.result);
       const canvas = card.querySelector('canvas');
       if (canvas) painted.set(canvas, msg.result);
-      els.gallery.append(card);
+      cells.get(msg.result.id)?.replaceChildren(card);
       setStatus(`Solving… ${msg.i + 1} of ${msg.n}`);
       if (!selected && msg.result.modules) select(msg.result, card);
     }
