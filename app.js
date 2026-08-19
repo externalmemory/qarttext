@@ -425,7 +425,7 @@ els.runCheck.addEventListener('click', () => {
 
 // Keep in step with BUILD in sw.js; shown in the footer so it is obvious which
 // version is loaded when something looks out of date.
-const BUILD = '2026-08-19.2';
+const BUILD = '2026-08-19.3';
 document.getElementById('build').textContent = BUILD;
 
 if ('serviceWorker' in navigator) {

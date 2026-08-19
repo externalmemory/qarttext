@@ -149,13 +149,31 @@ for (const [ch, rows] of Object.entries(PIXEL)) {
   if (!(ch in LOWER)) LOWER[ch] = [...rows, SP.repeat(rows[0].length)];
 }
 
+/**
+ * Trims columns that are blank in every row, so a glyph's width is exactly its
+ * ink. Without this a letterform drawn inside a wider cell -- `r` and `f` in
+ * the 5-wide fonts sit in four columns -- carries an invisible extra module of
+ * side bearing, and the tracking added after it produces a visibly wider gap
+ * than everywhere else. Spacing is the tracking's job alone.
+ */
+function trimBlankColumns(rows) {
+  const w = rows[0].length;
+  const inked = (c) => rows.some(r => r[c] === '#');
+  let first = 0, last = w - 1;
+  while (first <= last && !inked(first)) first++;
+  while (last >= first && !inked(last)) last--;
+  if (last < first) return rows; // a blank glyph, i.e. the space: keep its width
+  return rows.map(r => r.slice(first, last + 1));
+}
+
 function compile(id, name, note, table, height) {
   const glyphs = {};
-  for (const [ch, rows] of Object.entries(table)) {
-    if (rows.length !== height) throw new Error(`${id} '${ch}': ${rows.length} rows, want ${height}`);
-    const w = rows[0].length;
-    for (const r of rows) if (r.length !== w) throw new Error(`${id} '${ch}': ragged rows`);
-    glyphs[ch] = { width: w, rows: rows.map(r => Array.from(r, c => (c === '#' ? 1 : 0))) };
+  for (const [ch, raw] of Object.entries(table)) {
+    if (raw.length !== height) throw new Error(`${id} '${ch}': ${raw.length} rows, want ${height}`);
+    const w0 = raw[0].length;
+    for (const r of raw) if (r.length !== w0) throw new Error(`${id} '${ch}': ragged rows`);
+    const rows = trimBlankColumns(raw);
+    glyphs[ch] = { width: rows[0].length, rows: rows.map(r => Array.from(r, c => (c === '#' ? 1 : 0))) };
   }
   return { id, name, note, height, glyphs, tracking: 1, leading: 2 };
 }

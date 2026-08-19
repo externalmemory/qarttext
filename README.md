@@ -99,6 +99,11 @@ how far the forced region extends, and which way round the letters run:
 Whitespace is what makes the text readable, far more than the choice of font.
 Clearance of 1 leaves the letterforms fighting the surrounding noise.
 
+Glyph widths are trimmed to their ink, so the one module of tracking between
+letters is the *only* gap. Left in, a blank edge column inside a glyph cell
+would add a second module of space after that letter alone — which is what made
+the gap between `r` and `g` in `dimview.org` wider than every other gap.
+
 Line breaks are taken after a dot or a hyphen, both of which stay at the end of
 the line where they read as deliberate. Hyphens matter more than they look:
 without them a label such as `constructive-calculator.` is a single indivisible
