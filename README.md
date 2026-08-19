@@ -81,7 +81,6 @@ often costs you a larger code but buys back fidelity.
 | Control | Effect |
 | --- | --- |
 | Error correction | `L` leaves the most room for artwork, `H` the least. `M` is a good default. |
-| Largest symbol | Caps how big the code may grow. Bigger symbols give cleaner text. |
 | Maximum lines | Whether long domains may wrap. Breaks are made at dots wherever possible. |
 | Clearance | Modules of whitespace between the letterforms and the surrounding noise. Default 2. |
 | Text override | Draw something other than the domain. |
@@ -105,6 +104,32 @@ the URL specification. Nothing forces case anywhere: a single-case font simply
 has no glyph for the other case, so the lookup falls back to the one it does
 have.
 
+## Symbol size
+
+There is deliberately no control for this, because there is no fixed ceiling to
+expose. Phone cameras do not impose a maximum QR version: a version 40 symbol
+reads perfectly well if it is printed large enough, and a version 10 symbol
+fails if printed too small. What is bounded is the width of a *single module*,
+not the number of them.
+
+So the app searches for the smallest symbol whose letterforms come out exact
+and whose plate is clean, and reports the width that code needs to be printed.
+The millimetre figures assume 0.4 mm per module, a commonly cited rule of thumb
+for phone cameras at arm's length rather than a specification — give a code more
+room if it will be read in poor light, at a distance, or off a low-resolution
+screen.
+
+The search is bounded two ways. Every forced module needs a free bit, so any
+version with fewer than 1.5 free bits per forced module is rejected without
+paying for the elimination; that check costs nothing next to a solve and stops
+the budget being spent on sizes that were never going to work. Beyond that the
+search stops after twelve workable sizes, or as soon as one has exact
+letterforms and a plate above 98.5%.
+
+Note that fidelity is *not* monotonic in version — a larger symbol is usually
+but not always cleaner — so the search cannot simply stop at the first
+improvement.
+
 ## Placement
 
 Where the text sits is a real degree of freedom, and the app searches both axes
@@ -120,8 +145,10 @@ light ring inside an alignment pattern can serve as part of the clearance.
 Measured over 72 layouts, modules where the text overlaps a function pattern
 come out correct 61% of the time, against the ~50% that chance alone would give
 — the placement search really is exploiting the structure. Switching from the
-old rule (any uncontrollable module is a cost) cut the number of variants with
-any stuck letterform from 93 in 380 to 65 in 380.
+old rule (any uncontrollable module is a cost), together with letting the
+symbol-size search run to where it is actually useful, cut the number of
+variants with any stuck letterform from 93 in 380 to 16 in 380, and lifted the
+worst plate fidelity from 87.6% to 95.7%.
 
 The detail panel exposes a nudge pad if you want to place the text by hand;
 each nudge re-solves from scratch, and directions with no room are greyed out.

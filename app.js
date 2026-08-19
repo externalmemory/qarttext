@@ -1,11 +1,11 @@
 import { FONT_BY_ID } from './src/fonts.js';
 import { STYLE_BY_ID } from './src/layout.js';
-import { toSVG, drawToCanvas, scaleFor, svgBlob, canvasToPngBlob, filenameFor, DEFAULT_QUIET } from './src/render.js';
+import { toSVG, drawToCanvas, scaleFor, svgBlob, canvasToPngBlob, filenameFor, minPrintWidthMm, MM_PER_MODULE, DEFAULT_QUIET } from './src/render.js';
 
 const $ = (id) => document.getElementById(id);
 const els = {
   form: $('form'), url: $('url'), go: $('go'),
-  ecl: $('ecl'), maxVersion: $('maxVersion'), maxLines: $('maxLines'), label: $('label'),
+  ecl: $('ecl'), maxLines: $('maxLines'), label: $('label'),
   clearance: $('clearance'), offsetOut: $('offsetOut'), autoPlace: $('autoPlace'),
   status: $('status'), galleryWrap: $('galleryWrap'), gallery: $('gallery'),
   detail: $('detail'), detailTitle: $('detailTitle'), detailCaption: $('detailCaption'),
@@ -69,7 +69,6 @@ function readOptions() {
   return {
     url: els.url.value.trim(),
     ecl: els.ecl.value,
-    maxVersion: Number(els.maxVersion.value),
     maxLines: Number(els.maxLines.value),
     clearance: Number(els.clearance.value),
     text: override || null,
@@ -110,7 +109,7 @@ function makeCard(r) {
   name.textContent = variantName(r);
   const meta = document.createElement('div');
   meta.className = 'meta';
-  meta.innerHTML = `v${r.version}-${r.ecl} &middot; ${r.size}&times;${r.size}<br>`
+  meta.innerHTML = `v${r.version}-${r.ecl} &middot; ${r.size}&times;${r.size} &middot; &ge;${minPrintWidthMm(r)}&thinsp;mm<br>`
     + `<span class="badge${perfect ? '' : ' imperfect'}">`
     + (perfect ? 'letterforms exact' : `${r.stats.inkMisses} stuck in text`)
     + `</span> &middot; ${(r.stats.fidelity * 100).toFixed(1)}% plate`
@@ -140,6 +139,7 @@ function select(r, card) {
     ['modules forced', `${s.forced} (rank ${s.rank})`],
     ['letterforms', s.inkMisses === 0 ? `all ${s.inkTotal} exact` : `${s.inkMisses} of ${s.inkTotal} stuck`],
     ['plate fidelity', `${(s.fidelity * 100).toFixed(2)}%`],
+    ['print at least', `${minPrintWidthMm(r)} mm wide (${MM_PER_MODULE} mm per module — a rule of thumb, not a spec)`],
     ['error correction', 'fully intact — nothing spent'],
   ].map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join('');
 

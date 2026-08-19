@@ -77,3 +77,18 @@ export function filenameFor(result) {
   if (result.styleId) bits.push(result.styleId);
   return bits.join('-').toLowerCase();
 }
+
+/**
+ * Roughly how wide the code must be printed to scan reliably.
+ *
+ * There is no fixed module ceiling imposed by phone cameras -- a version 40
+ * symbol reads perfectly well if it is big enough. What matters is the size of
+ * one module. 0.4 mm per module is a commonly cited rule of thumb for phone
+ * scanning at arm's length; treat it as guidance, not a specification, and
+ * give a code more room if it will be read in poor light or at a distance.
+ */
+export const MM_PER_MODULE = 0.4;
+
+export function minPrintWidthMm(result, mmPerModule = MM_PER_MODULE, quiet = DEFAULT_QUIET) {
+  return Math.ceil((result.size + quiet * 2) * mmPerModule);
+}

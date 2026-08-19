@@ -44,16 +44,6 @@
         </select>
       </label>
       <label class="field">
-        <span>Largest symbol</span>
-        <select id="maxVersion">
-          <option value="10">Version 10 &mdash; 57&times;57</option>
-          <option value="14">Version 14 &mdash; 73&times;73</option>
-          <option value="20" selected>Version 20 &mdash; 97&times;97</option>
-          <option value="27">Version 27 &mdash; 125&times;125</option>
-          <option value="40">Version 40 &mdash; 177&times;177</option>
-        </select>
-      </label>
-      <label class="field">
         <span>Maximum lines</span>
         <select id="maxLines">
           <option value="1">1 &mdash; never wrap</option>
@@ -84,7 +74,8 @@
     <h2>Pick one</h2>
     <p class="hint">Nine treatments of the same URL. Fonts run across, plate styles down.
       Whitespace is what makes the text readable, so raise <em>Clearance</em> if a variant
-      is fighting the noise around it.</p>
+      is fighting the noise around it. Symbol size is chosen automatically; each card
+      shows how wide that code needs to be printed.</p>
     <div class="gallery" id="gallery"></div>
   </section>
 
@@ -182,6 +173,17 @@
       <a href="https://research.swtch.com/qart">QArt</a> construction, with the artwork
       being type rather than an image. Cox bought his free bits by appending junk to the
       URL; taking them from the padding instead leaves the URL byte-for-byte intact.
+    </p>
+    <p>
+      Nothing here caps the symbol size on the scanner&rsquo;s behalf, because no such
+      fixed ceiling exists. A large symbol reads perfectly well if it is printed large
+      enough; a small one fails if printed too small. What matters is the width of a
+      single module, not the number of them &mdash; so the app searches for the smallest
+      symbol whose letterforms come out exact and whose plate is clean, then tells you
+      the width that code needs. The millimetre figures assume 0.4&thinsp;mm per module,
+      a commonly cited rule of thumb for phone cameras at arm&rsquo;s length rather than
+      a specification. Give a code more room if it will be read in poor light, at a
+      distance, or off a low-resolution screen.
     </p>
     <p class="caveat">
       Where a module carries a bit of the URL itself, it cannot be moved &mdash; those
