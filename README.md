@@ -153,6 +153,36 @@ worst plate fidelity from 87.6% to 95.7%.
 The detail panel exposes a nudge pad if you want to place the text by hand;
 each nudge re-solves from scratch, and directions with no room are greyed out.
 
+### Rotation: measured, and rejected
+
+Readers establish orientation from the finder patterns, so a symbol can be
+turned through any quarter turn and still scan. That looks like four more
+degrees of freedom, and one metric says it should pay handsomely: because the
+zig-zag lays out codewords in column pairs, the payload's immovable modules
+cluster into columns, and a text band turned to run the other way meets **two
+to three times fewer of them, often none at all** (0 against 16–31 in direct
+measurement).
+
+It makes the output worse. Across the 380-case sweep, searching all four
+orientations raised the number of variants with a stuck letterform from 16 to
+43, and dropped worst-case plate fidelity from 95.7% to 91.5%.
+
+The reason is that the count of immovable modules is not the binding
+constraint. Reed–Solomon blocks are *independent* — a block's error-correction
+codewords are a function of that block's data and nothing else — so a target
+module can only be steered by free bits belonging to its own block. A band
+lying **along** the placement path touches few codewords and concentrates its
+demand on a handful of blocks, exhausting their freedom, even though it covers
+almost no immovable modules. A band lying **across** the path spreads the same
+demand over every block. Measuring per-block shortfall instead of immovable
+modules predicts the outcome well, and it says an upright band wins.
+
+Quarter and half turns are therefore not searched. Half turns (0 and 180
+degrees) keep the band across the path and are genuinely competitive, but the
+difference is small and inconsistent — better on one version, worse on the
+next — and it costs a second full elimination per symbol size to find out which.
+The version search already covers that ground more cheaply.
+
 ## Layout
 
 ```
