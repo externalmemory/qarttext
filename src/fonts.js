@@ -149,7 +149,7 @@ for (const [ch, rows] of Object.entries(PIXEL)) {
   if (!(ch in LOWER)) LOWER[ch] = [...rows, SP.repeat(rows[0].length)];
 }
 
-function compile(id, name, note, table, height, casing) {
+function compile(id, name, note, table, height) {
   const glyphs = {};
   for (const [ch, rows] of Object.entries(table)) {
     if (rows.length !== height) throw new Error(`${id} '${ch}': ${rows.length} rows, want ${height}`);
@@ -157,32 +157,29 @@ function compile(id, name, note, table, height, casing) {
     for (const r of rows) if (r.length !== w) throw new Error(`${id} '${ch}': ragged rows`);
     glyphs[ch] = { width: w, rows: rows.map(r => Array.from(r, c => (c === '#' ? 1 : 0))) };
   }
-  return { id, name, note, height, casing, glyphs, tracking: 1, leading: 2 };
+  return { id, name, note, height, glyphs, tracking: 1, leading: 2 };
 }
 
 export const FONTS = [
-  compile('micro', 'Micro 3x5', 'Densest. Capital forms.', MICRO, 5, 'upper'),
-  compile('pixel', 'Pixel 5x7', 'Handheld-LCD capitals.', PIXEL, 7, 'upper'),
-  compile('lower', 'Lower 5x8', 'True lowercase with descenders.', LOWER, 8, 'lower'),
+  compile('micro', 'Micro 3x5', 'Densest. One case only.', MICRO, 5),
+  compile('pixel', 'Pixel 5x7', 'Handheld-LCD forms. One case only.', PIXEL, 7),
+  compile('lower', 'Mixed 5x8', 'Upper and lower case, with descenders.', LOWER, 8),
 ];
 
 export const FONT_BY_ID = Object.fromEntries(FONTS.map(f => [f.id, f]));
 
-// Maps a string into the glyphs a font actually has.
-export function fitCase(font, text) {
-  return font.casing === 'upper' ? text.toUpperCase() : text.toLowerCase();
-}
-
+// Text is drawn in whatever case it was typed. A single-case font simply has
+// no glyph for the other case, so the lookup falls back to the one it does
+// have rather than the case being forced anywhere.
 export function glyphFor(font, ch) {
   return font.glyphs[ch] || font.glyphs[ch.toUpperCase()] || font.glyphs[ch.toLowerCase()] || font.glyphs['?'] || font.glyphs[' '];
 }
 
 export function measure(font, text) {
-  const s = fitCase(font, text);
   let w = 0;
-  for (let i = 0; i < s.length; i++) {
-    w += glyphFor(font, s[i]).width;
-    if (i < s.length - 1) w += font.tracking;
+  for (let i = 0; i < text.length; i++) {
+    w += glyphFor(font, text[i]).width;
+    if (i < text.length - 1) w += font.tracking;
   }
   return w;
 }

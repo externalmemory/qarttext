@@ -1,6 +1,6 @@
 // Turns a URL into a set of modules the solver should force.
 
-import { FONT_BY_ID, fitCase, glyphFor, measure } from './fonts.js';
+import { FONT_BY_ID, glyphFor, measure } from './fonts.js';
 
 export const STYLES = [
   { id: 'plate', name: 'Plate', note: 'Light plate behind the text.', kind: 'plate', invert: false },
@@ -12,7 +12,7 @@ export const STYLE_BY_ID = Object.fromEntries(STYLES.map(s => [s.id, s]));
 const STYLE_ALIASES = { band: 'plate', glyph: 'halo' };
 export const resolveStyle = (id) => STYLE_BY_ID[id] ?? STYLE_BY_ID[STYLE_ALIASES[id]] ?? STYLES[0];
 
-export const DEFAULT_CLEARANCE = 3;
+export const DEFAULT_CLEARANCE = 2;
 
 // Priority ladder. The solver satisfies constraints in this order and drops
 // the lowest first when it runs out of freedom, so letterforms always survive
@@ -25,7 +25,12 @@ const W_PLATE = 1;    // plate area beyond the clearance
 /** Weight marking a letterform module, so callers can count them. */
 export const INK_WEIGHT = W_INK;
 
-/** The label to draw: host name for web URLs, something sensible otherwise. */
+/**
+ * The label to draw: host name for web URLs, something sensible otherwise.
+ * The host is pulled out of the raw string rather than via `new URL()`, whose
+ * `hostname` is lower-cased by the URL specification -- the label keeps
+ * whatever case was typed.
+ */
 export function domainOf(input) {
   const raw = String(input).trim();
   if (!raw) return '';
@@ -36,17 +41,16 @@ export function domainOf(input) {
     const rest = raw.slice(scheme[0].length).replace(/^\/\//, '');
     if (/^mailto$/i.test(scheme[1])) {
       const at = rest.lastIndexOf('@');
-      return (at >= 0 ? rest.slice(at + 1) : rest).split(/[?#]/)[0].toLowerCase();
+      return (at >= 0 ? rest.slice(at + 1) : rest).split(/[?#]/)[0];
     }
-    return rest.split(/[?#]/)[0].toLowerCase() || scheme[1].toLowerCase();
+    return rest.split(/[?#]/)[0] || scheme[1];
   }
 
-  const withScheme = /^https?:\/\//i.test(raw) ? raw : 'https://' + raw;
-  try {
-    return new URL(withScheme).hostname.toLowerCase().replace(/^www\./, '');
-  } catch {
-    return raw.toLowerCase();
-  }
+  let host = raw.replace(/^https?:\/\//i, '').split(/[/?#]/)[0];
+  const at = host.lastIndexOf('@');
+  if (at >= 0) host = host.slice(at + 1);      // drop any userinfo
+  host = host.replace(/:\d+$/, '');            // drop any port
+  return host.replace(/^www\./i, '') || raw;
 }
 
 /** Normalises what the user typed into the URL that will actually be encoded. */
@@ -109,10 +113,9 @@ function blockMetrics(font, lines) {
 function rasterise(font, lines, width, boxW, boxH, pad) {
   const ink = new Uint8Array(boxW * boxH);
   lines.forEach((line, li) => {
-    const text = fitCase(font, line);
     let x = pad + Math.floor((width - measure(font, line)) / 2);
     const y0 = pad + li * (font.height + font.leading);
-    for (const ch of text) {
+    for (const ch of line) {
       const g = glyphFor(font, ch);
       for (let r = 0; r < font.height; r++) {
         for (let c = 0; c < g.width; c++) {

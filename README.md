@@ -72,6 +72,10 @@ always protects the letterforms ahead of the plate behind them. At levels L and
 M the letterforms are typically exact. At level H, where free bits are scarce,
 expect a handful of stuck pixels — the card tells you how many before you pick it.
 
+Clearance interacts with this: a smaller clearance lets the text fit in a
+smaller symbol, and a smaller symbol has fewer free bits. Raising clearance
+often costs you a larger code but buys back fidelity.
+
 ## Options
 
 | Control | Effect |
@@ -79,18 +83,27 @@ expect a handful of stuck pixels — the card tells you how many before you pick
 | Error correction | `L` leaves the most room for artwork, `H` the least. `M` is a good default. |
 | Largest symbol | Caps how big the code may grow. Bigger symbols give cleaner text. |
 | Maximum lines | Whether long domains may wrap. Breaks are made at dots wherever possible. |
-| Clearance | Modules of whitespace between the letterforms and the surrounding noise. Default 3. |
+| Clearance | Modules of whitespace between the letterforms and the surrounding noise. Default 2. |
 | Text override | Draw something other than the domain. |
 
-Three fonts (`Micro 3×5`, `Pixel 5×7`, `Lower 5×8`, all authored for this
-project) times three styles make the nine variants:
+Three fonts, all authored for this project, times three styles make the nine
+variants. The fonts are `Micro 3×5` and `Pixel 5×7`, which hold a single case,
+and `Mixed 5×8`, which has real upper and lower case with descenders. The
+styles are:
 
 - **Plate** — a light rectangle behind the text.
 - **Halo** — clearance around the strokes only; ordinary noise beyond it.
 - **Inverse** — a dark plate with light letters.
 
 Whitespace is what makes the text readable, far more than the choice of font.
-Clearance below 2 leaves the letterforms fighting the surrounding noise.
+Clearance of 1 leaves the letterforms fighting the surrounding noise.
+
+Text is drawn in **whatever case you type**. The label keeps the case of the
+host as entered — `DepartureMono.com` stays mixed — which means the host is
+pulled out of the string by hand, since `new URL().hostname` is lower-cased by
+the URL specification. Nothing forces case anywhere: a single-case font simply
+has no glyph for the other case, so the lookup falls back to the one it does
+have.
 
 ## Placement
 
@@ -105,11 +118,10 @@ free, a stroke crossing the dark modules of the timing line is free, and the
 light ring inside an alignment pattern can serve as part of the clearance.
 
 Measured over 72 layouts, modules where the text overlaps a function pattern
-come out correct 61.5% of the time, against the ~50% that chance alone would
-give — the placement search really is exploiting the structure. Switching from
-the old rule (any uncontrollable module is a cost) cut the number of variants
-with any stuck letterform from 93 in 380 to 58 in 380, while *increasing*
-clearance from 2 modules to 3.
+come out correct 61% of the time, against the ~50% that chance alone would give
+— the placement search really is exploiting the structure. Switching from the
+old rule (any uncontrollable module is a cost) cut the number of variants with
+any stuck letterform from 93 in 380 to 65 in 380.
 
 The detail panel exposes a nudge pad if you want to place the text by hand;
 each nudge re-solves from scratch, and directions with no room are greyed out.
