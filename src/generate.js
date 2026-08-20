@@ -75,7 +75,7 @@ export function generate({
 
 function attemptVersion({ version, ecl, bytes, label, font, style, fontId, styleId, maxLines, margin, allowHardWrap, encoded, clearance, offset, minRatio = 0, overrides = null }) {
   const size = symbolSize(version);
-  const usable = size - 2 * margin - 2 * clearance;
+  const usable = size - 2 * margin - 2 * Math.ceil(clearance);
   if (usable <= 0) return null;
 
   const lines = wrapText(font, label, usable, maxLines, allowHardWrap);

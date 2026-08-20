@@ -82,7 +82,7 @@ often costs you a larger code but buys back fidelity.
 | --- | --- |
 | Error correction | `L` leaves the most room for artwork, `H` the least. `M` is a good default. |
 | Maximum lines | How many lines a long domain may wrap onto. Breaks are taken after a dot or a hyphen. |
-| Clearance | Modules of whitespace between the letterforms and the surrounding noise. Default 2. |
+| Clearance | Rings of whitespace between the letterforms and the surrounding noise. Half steps allowed. Default 2. |
 | Text override | Draw something other than the domain. |
 
 Three fonts, all authored for this project, times four styles make the twelve
@@ -98,6 +98,18 @@ how far the forced region extends, and which way round the letters run:
 
 Whitespace is what makes the text readable, far more than the choice of font.
 Clearance of 1 leaves the letterforms fighting the surrounding noise.
+
+Clearance takes half steps. A clearance of 2½ means two rings cleared
+completely and a third cleared only in part: an ordered 4×4 Bayer threshold
+picks half the modules of that outer ring to force light and leaves the rest to
+whatever the solver puts there. The edge then fades into the surrounding noise
+instead of stopping dead, and the partial ring costs about half the forced
+modules of a whole one — roughly 8% fewer across the whole layout, which
+matters when free bits are scarce.
+
+It buys texture, not space: the box still extends by the full outer ring, so 2½
+occupies what 3 would. Compared against 3 it is close to free; compared against
+2 it costs a ring.
 
 Glyph widths are trimmed to their ink, so the one module of tracking between
 letters is the *only* gap. Left in, a blank edge column inside a glyph cell

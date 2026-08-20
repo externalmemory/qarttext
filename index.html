@@ -54,11 +54,14 @@
       <label class="field">
         <span>Clearance</span>
         <select id="clearance">
-          <option value="1">1 module &mdash; tight</option>
-          <option value="2" selected>2 modules (default)</option>
-          <option value="3">3 modules</option>
-          <option value="4">4 modules</option>
-          <option value="5">5 modules &mdash; generous</option>
+          <option value="1">1 &mdash; tight</option>
+          <option value="1.5">1&frac12; &mdash; 1 clear ring, 1 stippled</option>
+          <option value="2" selected>2 (default)</option>
+          <option value="2.5">2&frac12; &mdash; 2 clear rings, 1 stippled</option>
+          <option value="3">3</option>
+          <option value="3.5">3&frac12; &mdash; 3 clear rings, 1 stippled</option>
+          <option value="4">4</option>
+          <option value="5">5 &mdash; generous</option>
         </select>
       </label>
       <label class="field">
@@ -74,8 +77,10 @@
     <h2>Pick one</h2>
     <p class="hint">Twelve treatments of the same URL: fonts across, extent and inversion down.
       Whitespace is what makes the text readable, so raise <em>Clearance</em> if a variant
-      is fighting the noise around it. Symbol size is chosen automatically; each card
-      shows how wide that code needs to be printed.</p>
+      is fighting the noise around it. A half step clears its outermost ring only
+      partly, stippling it, which softens the edge and costs fewer forced modules than
+      a whole ring. Symbol size is chosen automatically; each card shows how wide that
+      code needs to be printed.</p>
     <div class="gallery-scroll">
       <table class="gallery" id="gallery"></table>
     </div>

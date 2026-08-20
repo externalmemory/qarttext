@@ -23,7 +23,14 @@ export const DEFAULT_CLEARANCE = 2;
 const W_INK = 1000;   // the letterforms themselves
 const W_NEAR = 50;    // the module immediately around each stroke
 const W_CLEAR = 8;    // the rest of the requested clearance
+const W_DITHER = 4;   // the partially-cleared ring of a fractional clearance
 const W_PLATE = 1;    // plate area beyond the clearance
+
+// Ordered 4x4 Bayer threshold. A fractional clearance clears only part of its
+// outermost ring, and this decides which part: an even, deterministic stipple
+// rather than a random scatter, so the edge reads as texture instead of damage.
+const BAYER4 = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
+const ditherAt = (r, c) => BAYER4[(r & 3) * 4 + (c & 3)] / 16;
 const W_PINNED = 5000; // a module the reader has clicked; outranks everything
 
 /** Weight marking a hand-set module, so it survives when freedom runs short. */
@@ -152,7 +159,14 @@ export function placeText({
   const font = FONT_BY_ID[fontId];
   const style = resolveStyle(styleId);
   const { width, height } = blockMetrics(font, lines);
-  const pad = Math.max(1, clearance);
+
+  // A clearance of 2.5 means two rings fully cleared and a third only partly:
+  // roughly half the benefit of a third ring for roughly half the forced
+  // modules, which is often the difference between two symbol sizes.
+  const requested = Math.max(1, clearance);
+  const full = Math.max(1, Math.floor(requested));
+  const frac = requested - Math.floor(requested);
+  const pad = Math.ceil(requested);
   const boxW = width + pad * 2, boxH = height + pad * 2;
   if (boxW > size || boxH > size) return null;
 
@@ -170,12 +184,22 @@ export function placeText({
   for (let r = 0; r < boxH; r++) {
     for (let c = 0; c < boxW; c++) {
       const d = dist[r * boxW + c];
-      let value, weight;
+      let value = bgValue, weight;
       if (d === 0) { value = inkValue; weight = W_INK; }
-      else if (d === 1) { value = bgValue; weight = W_NEAR; }
-      else if (d <= pad) { value = bgValue; weight = W_CLEAR; }
-      else if (style.kind === 'plate') { value = bgValue; weight = W_PLATE; }
-      else continue; // halo: leave the rest as ordinary noise
+      else if (d === 1 && full >= 1) weight = W_NEAR;
+      else if (d <= full) weight = W_CLEAR;
+      else if (style.kind === 'halo') {
+        // the partly-cleared ring, then ordinary noise beyond it
+        if (frac > 0 && d === pad && ditherAt(r, c) < frac) weight = W_DITHER;
+        else continue;
+      } else {
+        // plate: its outermost ring is the one that gets stippled
+        const toEdge = Math.min(r, c, boxH - 1 - r, boxW - 1 - c);
+        if (frac > 0 && toEdge < pad - full) {
+          if (ditherAt(r, c) < frac) weight = W_DITHER;
+          else continue;
+        } else weight = W_PLATE;
+      }
       cells.push({ dr: r, dc: c, value, weight });
     }
   }
@@ -245,7 +269,7 @@ export function placeText({
     rect: { x: x0, y: y0, w: boxW, h: boxH },
     offset: { x: x0, y: y0 },
     bounds: { maxX: size - boxW, maxY: size - boxH },
-    font, style, lines, clearance: pad, stuck,
+    font, style, lines, clearance: requested, stuck,
   };
 }
 
