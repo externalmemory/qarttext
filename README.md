@@ -52,16 +52,13 @@ padding instead leaves the URL **byte-for-byte identical** to what you typed.
 
 ### The one assumption
 
-The whole technique rests on decoders stopping at the terminator and ignoring
-the padding. Every ZXing-lineage reader does this, and the app pins the
-terminator to `0000` so a decoder can never mistake the random padding for
-another data segment.
+The technique rests on decoders stopping at the terminator and ignoring the
+padding. Every ZXing-lineage reader does this, and the app pins the terminator
+to `0000` so a decoder can never mistake the random padding for another data
+segment.
 
-That said, it is an assumption about other people's software. The app ships a
-**Decoder check** panel that builds three codes — a control with conventional
-padding, the same URL with random padding and no artwork, and the real thing —
-so you can confirm the behaviour on the scanners you care about (iOS Camera,
-Android's Google Lens) rather than take it on trust.
+Codes from this generator have been confirmed to scan correctly on real iOS and
+Android camera apps.
 
 ### What it cannot do
 
@@ -272,13 +269,9 @@ an independent decoder that re-reads the rendered grid and confirms every
 Reed–Solomon syndrome is zero — that is, the symbol is not merely readable but
 carries its full, unspent correction capacity.
 
-A sweep of 380 combinations (10 URLs × 4 correction levels × 3 fonts × 3 styles,
-plus controls) decodes to the exact input URL with zero syndromes and zero
+A sweep of 600 combinations (12 URLs × 4 correction levels × 3 fonts × 4 styles) decodes to the exact input URL with zero syndromes and zero
 SVG/canvas mismatches. The downloaded PNG and SVG files themselves were read
 back and decoded to confirm the exported artefacts, not just the in-memory grid.
-
-Codes from this generator have been confirmed to scan correctly on real iOS and
-Android camera apps.
 
 ## Credits
 

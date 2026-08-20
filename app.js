@@ -13,7 +13,6 @@ const els = {
   bigCanvas: $('bigCanvas'), stats: $('stats'),
   scale: $('scale'), scaleOut: $('scaleOut'), dark: $('dark'), light: $('light'),
   contrastWarn: $('contrastWarn'), dlPng: $('dlPng'), dlSvg: $('dlSvg'),
-  runCheck: $('runCheck'), checkGallery: $('checkGallery'), verdict: $('verdict'),
 };
 
 let selected = null;
@@ -45,15 +44,6 @@ async function runFallback(message, onMessage) {
     onMessage({ type: 'done', token: tk });
   } else if (type === 'nudge') {
     onMessage({ type: 'nudged', token: tk, result: fallback.gen.generate(opts) });
-  } else if (type === 'check') {
-    const { generate, generatePlain, generateNoisyPadding } = fallback.gen;
-    const tests = [
-      ['plain', '1. Control', 'An ordinary QR code with the conventional EC/11 padding.', generatePlain(opts)],
-      ['noisy', '2. Padding', 'Same URL, random padding after the terminator, no artwork.', generateNoisyPadding(opts)],
-      ['qart', '3. The real thing', 'Padding solved to spell the domain name inside the code.', generate({ ...opts, fontId: 'lower', styleId: 'band' })],
-    ];
-    for (const [key, name, note, result] of tests) onMessage({ type: 'check', token: tk, key, name, note, result });
-    onMessage({ type: 'done', token: tk });
   }
 }
 
@@ -174,7 +164,6 @@ function select(r, card, keepEdits = false) {
     ['letterforms', s.inkMisses === 0 ? `all ${s.inkTotal} exact` : `${s.inkMisses} of ${s.inkTotal} stuck`],
     ['plate fidelity', `${(s.fidelity * 100).toFixed(2)}%`],
     ['print at least', `${minPrintWidthMm(r)} mm wide (${MM_PER_MODULE} mm per module — a rule of thumb, not a spec)`],
-    ['error correction', 'fully intact — nothing spent'],
   ].map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join('');
 
   els.offsetOut.textContent = r.offset
@@ -375,8 +364,8 @@ function run() {
       els.go.disabled = false;
       const fitted = els.gallery.querySelectorAll('.card:not(.unfit)').length;
       setStatus(fitted
-        ? `${fitted} variants in ${Math.round(performance.now() - started)} ms. Every one is a valid QR code with its error correction untouched.`
-        : 'Nothing fits. Try a larger maximum symbol, a lower error-correction level, or more lines.', !fitted);
+        ? `${fitted} variants in ${Math.round(performance.now() - started)} ms.`
+        : 'Nothing fits. Try a lower error-correction level, more lines, or less clearance.', !fitted);
     }
   });
 }
@@ -385,41 +374,6 @@ function setStatus(text, isError = false) {
   els.status.textContent = text;
   els.status.classList.toggle('error', isError);
 }
-
-// ------------------------------------------------------------ decoder check
-
-els.runCheck.addEventListener('click', () => {
-  const opts = readOptions();
-  if (!opts.url) { setStatus('Enter a URL first.', true); return; }
-  const tk = ++token;
-  els.runCheck.disabled = true;
-  els.checkGallery.replaceChildren();
-  els.verdict.hidden = false;
-
-  send({ type: 'check', token: tk, ...opts }, (msg) => {
-    if (msg.token !== tk) return;
-    if (msg.type === 'error') { setStatus(msg.message, true); els.runCheck.disabled = false; return; }
-    if (msg.type === 'check' && msg.result) {
-      const wrap = document.createElement('div');
-      wrap.className = 'card';
-      wrap.style.cursor = 'default';
-      const canvas = document.createElement('canvas');
-      drawToCanvas(msg.result, canvas, { scale: scaleFor(msg.result.size, 360), quiet: DEFAULT_QUIET });
-      const name = document.createElement('div');
-      name.className = 'name';
-      name.textContent = msg.name;
-      const meta = document.createElement('div');
-      meta.className = 'meta';
-      meta.textContent = msg.note;
-      const expect = document.createElement('div');
-      expect.className = 'meta';
-      expect.innerHTML = `<strong>must scan as</strong><br>${msg.result.encoded}`;
-      wrap.append(canvas, name, meta, expect);
-      els.checkGallery.append(wrap);
-    }
-    if (msg.type === 'done') els.runCheck.disabled = false;
-  });
-});
 
 // ------------------------------------------------------------------ offline
 

@@ -1,6 +1,6 @@
 // Builds the gallery: one candidate per font and style combination.
 
-import { generate, generatePlain } from './generate.js';
+import { generate } from './generate.js';
 import { FONTS } from './fonts.js';
 import { STYLES } from './layout.js';
 
@@ -36,5 +36,3 @@ export function buildVariants(opts, onResult) {
   });
   return results;
 }
-
-export { generatePlain };

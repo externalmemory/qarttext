@@ -1,7 +1,7 @@
 // Byte-mode payload assembly, block interleaving, and module rendering.
 
 import { blockLayout, charCountBits, rsRemainder, symbolSize } from './qr.js';
-import { Skeleton, maskBit } from './matrix.js';
+import { maskBit } from './matrix.js';
 
 export function utf8Bytes(str) {
   return new TextEncoder().encode(str);
@@ -49,16 +49,6 @@ export function buildDataCodewords(version, ecl, bytes, freeBits = null) {
   return { data, layout, freeStart, freeCount };
 }
 
-// Conventional padding (0xEC/0x11) for a plain, non-QArt code.
-export function applyStandardPadding(data, freeStart) {
-  let byte = (freeStart + 7) >> 3;
-  let alt = 0xec;
-  for (; byte < data.length; byte++) {
-    data[byte] = alt;
-    alt = alt === 0xec ? 0x11 : 0xec;
-  }
-}
-
 // Splits data into blocks, appends EC, and interleaves into the final stream.
 export function interleave(data, layout) {
   const { blocks, ecPerBlock, numBlocks, shortDataLen } = layout;
@@ -102,18 +92,6 @@ export function applyMask(skeleton, unmasked, mask) {
   }
   skeleton.writeFormat(out, mask);
   return out;
-}
-
-// Plain (non-QArt) encode, used for the decoder-compatibility panel and as a
-// fallback when no text will fit.
-export function encodePlain(version, ecl, text, mask = null) {
-  const bytes = utf8Bytes(text);
-  const built = buildDataCodewords(version, ecl, bytes);
-  if (!built) return null;
-  applyStandardPadding(built.data, built.freeStart);
-  const skeleton = new Skeleton(version, ecl);
-  const unmasked = placeCodewords(skeleton, interleave(built.data, built.layout));
-  return { skeleton, unmasked, mask };
 }
 
 export function smallestVersion(ecl, byteLength, minVersion = 1) {

@@ -94,10 +94,10 @@
         <figcaption>
           <span id="detailCaption"></span><br>
           <span class="key">
-            <span class="chip fixed-dark"></span><span class="chip fixed-light"></span> fixed &mdash;
-            function patterns and modules carrying the URL itself
-            &nbsp; <span class="chip free-dark"></span><span class="chip free-light"></span> free &mdash;
-            click any of these to flip it; the solver rebuilds the rest
+            <span class="key-row"><span class="chip fixed-dark"></span><span class="chip fixed-light"></span>
+              fixed &mdash; function patterns and modules carrying the URL itself</span>
+            <span class="key-row"><span class="chip free-dark"></span><span class="chip free-light"></span>
+              free &mdash; click any of these to flip it; the solver rebuilds the rest</span>
           </span>
         </figcaption>
       </figure>
@@ -143,35 +143,8 @@
     </div>
   </section>
 
-  <section class="check" id="check">
-    <h2>Decoder check</h2>
-    <p>
-      This technique rests on one assumption: that a decoder reads the declared
-      number of bytes, stops at the terminator, and never looks at the padding
-      after it. That is what every ZXing-lineage reader does, but it is worth
-      confirming on the scanners you actually care about &mdash; the iOS Camera
-      app and Android&rsquo;s Google Lens. Scan all three below. Each should
-      produce <em>exactly</em> the URL shown beneath it.
-    </p>
-    <button id="runCheck" type="button">Build the three test codes</button>
-    <div class="gallery grid" id="checkGallery"></div>
-    <div class="verdict" id="verdict" hidden>
-      <h3>Reading the result</h3>
-      <ul>
-        <li><strong>All three correct</strong> &mdash; the technique is safe on that scanner.</li>
-        <li><strong>1 works, 2 fails</strong> &mdash; that decoder inspects padding bytes.
-            Nothing here can be made safe for it; report which scanner it was.</li>
-        <li><strong>1 and 2 work, 3 fails</strong> &mdash; not a padding problem. The plate
-            is confusing the binariser: try a higher error-correction level, a
-            larger module size when printing, or the Bare style.</li>
-        <li><strong>1 fails</strong> &mdash; the scanner, lighting or screen is at fault,
-            not the code.</li>
-      </ul>
-    </div>
-  </section>
-
   <section class="about">
-    <h2>How this works</h2>
+    <h2>Technical Details</h2>
     <p>
       A QR code&rsquo;s Reed&ndash;Solomon code is linear over GF(256), the block
       interleaving is a permutation, and the mask is a fixed XOR. Composed, the map
@@ -193,17 +166,6 @@
       URL; taking them from the padding instead leaves the URL byte-for-byte intact.
     </p>
     <p>
-      Nothing here caps the symbol size on the scanner&rsquo;s behalf, because no such
-      fixed ceiling exists. A large symbol reads perfectly well if it is printed large
-      enough; a small one fails if printed too small. What matters is the width of a
-      single module, not the number of them &mdash; so the app searches for the smallest
-      symbol whose letterforms come out exact and whose plate is clean, then tells you
-      the width that code needs. The millimetre figures assume 0.4&thinsp;mm per module,
-      a commonly cited rule of thumb for phone cameras at arm&rsquo;s length rather than
-      a specification. Give a code more room if it will be read in poor light, at a
-      distance, or off a low-resolution screen.
-    </p>
-    <p class="caveat">
       Where a module carries a bit of the URL itself, it cannot be moved &mdash; those
       few pixels come out wherever the URL puts them. The app reports the count as
       <em>fidelity</em> and picks the symbol size and position that minimise it,

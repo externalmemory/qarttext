@@ -2,9 +2,8 @@
 
 import { blockLayout, symbolSize } from './qr.js';
 import { penaltyScore } from './matrix.js';
-import { applyMask, utf8Bytes, smallestVersion, encodePlain, payloadBits, buildDataCodewords, interleave, placeCodewords } from './encode.js';
-import { Skeleton } from './matrix.js';
-import { solve, pinnedModuleMap, randomFreeBits } from './qart.js';
+import { applyMask, utf8Bytes, smallestVersion, payloadBits } from './encode.js';
+import { solve, pinnedModuleMap } from './qart.js';
 import { FONT_BY_ID } from './fonts.js';
 import { resolveStyle, placeText, wrapText, domainOf, normaliseUrl, DEFAULT_CLEARANCE, INK_WEIGHT, OVERRIDE_WEIGHT } from './layout.js';
 
@@ -144,49 +143,4 @@ function attemptVersion({ version, ecl, bytes, label, font, style, fontId, style
       payloadCodewords: Math.ceil(payloadBits(version, bytes.length) / 8),
     },
   };
-}
-
-/** A conventional QR code with standard padding, for side-by-side comparison. */
-export function generatePlain({ url, ecl = 'M', versionOverride = null, margin = 1 }) {
-  const encoded = normaliseUrl(url);
-  const bytes = utf8Bytes(encoded);
-  const version = versionOverride ?? smallestVersion(ecl, bytes.length);
-  if (version === null) return null;
-  const enc = encodePlain(version, ecl, encoded);
-  if (!enc) return null;
-  const size = symbolSize(version);
-  let best = null;
-  for (let mask = 0; mask < 8; mask++) {
-    const modules = applyMask(enc.skeleton, enc.unmasked, mask);
-    const penalty = penaltyScore(modules, size);
-    if (!best || penalty < best.penalty) best = { mask, modules, penalty };
-  }
-  return { modules: best.modules, size, version, ecl, mask: best.mask, encoded, margin, label: domainOf(encoded) };
-}
-
-/**
- * The same URL with random bits after the terminator but no artwork. This
- * isolates the one assumption the whole approach rests on: that a decoder
- * stops at the terminator and never looks at the padding. If a scanner reads
- * this correctly, it will read any code this app produces.
- */
-export function generateNoisyPadding({ url, ecl = 'M', versionOverride = null, margin = 1 }) {
-  const encoded = normaliseUrl(url);
-  const bytes = utf8Bytes(encoded);
-  const version = versionOverride ?? smallestVersion(ecl, bytes.length);
-  if (version === null) return null;
-  const built = buildDataCodewords(version, ecl, bytes);
-  if (!built) return null;
-  const noise = randomFreeBits(built.freeCount, 0x5bf03635);
-  const filled = buildDataCodewords(version, ecl, bytes, noise);
-  const skeleton = new Skeleton(version, ecl);
-  const unmasked = placeCodewords(skeleton, interleave(filled.data, filled.layout));
-  const size = symbolSize(version);
-  let best = null;
-  for (let mask = 0; mask < 8; mask++) {
-    const modules = applyMask(skeleton, unmasked, mask);
-    const penalty = penaltyScore(modules, size);
-    if (!best || penalty < best.penalty) best = { mask, modules, penalty };
-  }
-  return { modules: best.modules, size, version, ecl, mask: best.mask, encoded, margin, label: domainOf(encoded) };
 }

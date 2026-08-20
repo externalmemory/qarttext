@@ -57,7 +57,6 @@ h2 {
   font-family: var(--mono);
   font-size: 1.05rem;
   letter-spacing: 0.02em;
-  text-transform: lowercase;
   margin: 2.5rem 0 0.5rem;
   padding-bottom: 0.35rem;
   border-bottom: 1px solid var(--line);
@@ -235,7 +234,8 @@ table.gallery td {
 }
 
 /* Key for the editing preview. */
-.key { display: inline-block; margin-top: 0.4rem; line-height: 1.9; }
+.key { display: block; margin-top: 0.5rem; line-height: 1.8; }
+.key-row { display: block; }
 .chip {
   display: inline-block;
   width: 0.7rem; height: 0.7rem;
@@ -280,16 +280,11 @@ table.gallery td {
 .downloads { display: flex; gap: 0.6rem; flex-wrap: wrap; }
 .warn { color: var(--warn); font-size: 0.8rem; margin: 0; }
 
-/* -------------------------------------------------------- check and about */
+/* ------------------------------------------------------------------- about */
 
-.check p, .about p { max-width: 44rem; color: var(--dim); }
-.check p em, .about p em { color: var(--ink); font-style: normal; }
-.check button { margin-bottom: 1rem; }
-.verdict { margin-top: 1.25rem; }
-.verdict ul { max-width: 44rem; color: var(--dim); padding-left: 1.1rem; }
-.verdict strong { color: var(--ink); }
+.about p { max-width: 44rem; color: var(--dim); }
+.about p em { color: var(--ink); font-style: normal; }
 .about a { color: var(--accent); }
-.caveat { border-left: 2px solid var(--line); padding-left: 0.9rem; }
 
 footer p {
   font-family: var(--mono);
