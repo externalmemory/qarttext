@@ -4,6 +4,9 @@
 import { deflateSync } from 'node:zlib';
 import { writeFileSync } from 'node:fs';
 import { generate } from '../src/generate.js';
+import { FONT_BY_ID, glyphFor, measure } from '../src/fonts.js';
+
+const SITE = 'https://qarttext.pages.dev/';
 
 const CRC = new Uint32Array(256);
 for (let n = 0; n < 256; n++) {
@@ -48,8 +51,13 @@ function writePng(path, width, height, pixel) {
   return png.length;
 }
 
-const code = generate({ url: 'https://qr.example', text: 'qr', ecl: 'M', fontId: 'pixel', styleId: 'band', maxLines: 1, maxVersion: 8 });
+// The icon is a working code for the site itself. Kept short so the modules
+// stay chunky: at 192 px this is about 4 pixels per module, comfortably
+// scannable, where spelling out the whole domain would be closer to 3.
+const code = generate({ url: SITE, text: 'QT', ecl: 'M', fontId: 'pixel', styleId: 'plate', maxLines: 1 });
 if (!code) throw new Error('icon code did not generate');
+if (code.encoded !== SITE) throw new Error(`icon encodes ${code.encoded}, not ${SITE}`);
+console.log(`icon encodes ${code.encoded} — v${code.version}, ${code.size + 8} modules including quiet zone`);
 const { modules, size } = code;
 
 const DARK = [16, 16, 20], LIGHT = [246, 246, 244];
@@ -95,3 +103,38 @@ writeFileSync('icons/icon.svg',
 </svg>
 `);
 console.log(`icons/icon.svg  v${code.version} ${size}x${size}`);
+
+// A QR code cannot be read at favicon size: at 16 px this one would be a
+// quarter of a pixel per module. So the favicon is the letterforms alone,
+// drawn from the same font, where 16 px leaves roughly two pixels per module.
+{
+  const font = FONT_BY_ID.pixel, text = 'QT', pad = 1;
+  const w = measure(font, text) + pad * 2;
+  const side = Math.max(w, font.height + pad * 2);
+  const ox = Math.floor((side - measure(font, text)) / 2);
+  const oy = Math.floor((side - font.height) / 2);
+  const runs = [];
+  let x = ox;
+  for (const ch of text) {
+    const g = glyphFor(font, ch);
+    for (let r = 0; r < font.height; r++) {
+      let start = -1;
+      for (let c = 0; c <= g.width; c++) {
+        const on = c < g.width && g.rows[r][c] === 1;
+        if (on && start < 0) start = c;
+        else if (!on && start >= 0) {
+          runs.push(`M${x + start} ${oy + r}h${c - start}v1h-${c - start}z`);
+          start = -1;
+        }
+      }
+    }
+    x += g.width + font.tracking;
+  }
+  writeFileSync('icons/favicon.svg',
+`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${side} ${side}" shape-rendering="crispEdges">
+<rect width="${side}" height="${side}" fill="#f6f6f4"/>
+<path fill="#101014" d="${runs.join('')}"/>
+</svg>
+`);
+  console.log(`icons/favicon.svg  ${side}x${side} modules — ${(16 / side).toFixed(2)} px per module at 16 px`);
+}
