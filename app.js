@@ -80,7 +80,6 @@ function colours() {
 function buildTable() {
   const thead = document.createElement('thead');
   const head = document.createElement('tr');
-  head.append(document.createElement('td'));
   for (const f of FONTS) {
     const th = document.createElement('th');
     th.scope = 'col';
@@ -89,14 +88,14 @@ function buildTable() {
   }
   thead.append(head);
 
+  // No row headings: Plate against Halo, and upright against inverted, are
+  // obvious from the pictures, and on a phone the column of labels cost more
+  // width than the codes themselves. Each card names its own style instead,
+  // so nothing is lost to a screen reader or to a hover.
   const tbody = document.createElement('tbody');
   cells.clear();
   for (const style of STYLES) {
     const tr = document.createElement('tr');
-    const th = document.createElement('th');
-    th.scope = 'row';
-    th.textContent = style.name;
-    tr.append(th);
     for (const f of FONTS) {
       const td = document.createElement('td');
       td.textContent = '…';
@@ -118,6 +117,7 @@ function makeCard(r) {
   card.type = 'button';
   card.className = 'card';
   card.setAttribute('aria-pressed', 'false');
+  card.title = variantName(r);
 
   if (r.unfit || !r.modules) {
     card.classList.add('unfit');
@@ -139,6 +139,8 @@ function makeCard(r) {
     + (r.hardWrapped ? '<br>broken mid-label' : '');
 
   card.append(canvas, meta);
+  card.setAttribute('aria-label',
+    `${variantName(r)}, version ${r.version} level ${r.ecl}, ${r.size} by ${r.size} modules`);
   card.addEventListener('click', () => select(r, card));
   return card;
 }
@@ -387,7 +389,7 @@ function setStatus(text, isError = false) {
 
 // Keep in step with BUILD in sw.js; shown in the footer so it is obvious which
 // version is loaded when something looks out of date.
-const BUILD = '2026-08-20.5';
+const BUILD = '2026-08-20.6';
 document.getElementById('build').textContent = BUILD;
 
 if ('serviceWorker' in navigator) {

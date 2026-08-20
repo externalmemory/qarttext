@@ -163,7 +163,6 @@ table.gallery th {
   white-space: nowrap;
 }
 table.gallery thead th { text-align: center; border-bottom: 1px solid var(--line); }
-table.gallery tbody th { vertical-align: middle; border-right: 1px solid var(--line); }
 table.gallery td {
   padding: 0.35rem;
   vertical-align: top;
@@ -180,7 +179,10 @@ table.gallery td {
 }
 
 @media (max-width: 34rem) {
-  table.gallery { min-width: 26rem; }
+  /* three columns of codes, no labels to make room for */
+  table.gallery { min-width: 0; }
+  table.gallery td { padding: 0.2rem; }
+  table.gallery th { padding: 0.3rem 0.2rem; font-size: 0.62rem; }
   .card { padding: 0.4rem; }
   .card .meta { font-size: 0.6rem; }
 }

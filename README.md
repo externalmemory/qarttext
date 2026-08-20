@@ -86,7 +86,11 @@ often costs you a larger code but buys back fidelity.
 | Text override | Draw something other than the domain. |
 
 Three fonts, all authored for this project, times four styles make the twelve
-variants, laid out as a table with fonts across and styles down. The fonts are
+variants, laid out as a grid with fonts named across the top and styles running
+down. The styles are not labelled: plate against halo, and upright against
+inverted, are plain from the pictures, and on a phone a column of labels costs
+more width than the codes. Each card carries its own name for a screen reader
+or a hover instead. The fonts are
 `Micro 3×5` and `Pixel 5×7`, which hold a single case, and `Mixed 5×8`, which
 has real upper and lower case with descenders. The styles cross two choices —
 how far the forced region extends, and which way round the letters run:
