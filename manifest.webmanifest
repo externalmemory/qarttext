@@ -1,6 +1,6 @@
 {
-  "name": "Human-readable QR",
-  "short_name": "HR-QR",
+  "name": "QartText",
+  "short_name": "QartText",
   "description": "QR codes with the domain name legibly written inside them, without spending any error-correction capacity.",
   "start_url": "./",
   "scope": "./",

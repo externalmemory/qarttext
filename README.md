@@ -1,7 +1,10 @@
-# human-readable-qr
+# QartText
 
 QR codes with the domain name written legibly inside them, in a bitmap font —
 and **without spending any of the error-correction redundancy**.
+
+Named for Russ Cox's [QArt codes](https://research.swtch.com/qart), the
+construction it is built on, with type in place of the picture.
 
 Live app: open `index.html` from any static web server. It is a progressive web
 app with no external dependencies, no build step, and no network calls.
