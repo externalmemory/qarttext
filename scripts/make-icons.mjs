@@ -54,7 +54,7 @@ function writePng(path, width, height, pixel) {
 // The icon is a working code for the site itself. Kept short so the modules
 // stay chunky: at 192 px this is about 4 pixels per module, comfortably
 // scannable, where spelling out the whole domain would be closer to 3.
-const code = generate({ url: SITE, text: 'QT', ecl: 'M', fontId: 'pixel', styleId: 'plate', maxLines: 1 });
+const code = generate({ url: SITE, text: 'QR', ecl: 'M', fontId: 'pixel', styleId: 'plate', maxLines: 1 });
 if (!code) throw new Error('icon code did not generate');
 if (code.encoded !== SITE) throw new Error(`icon encodes ${code.encoded}, not ${SITE}`);
 console.log(`icon encodes ${code.encoded} — v${code.version}, ${code.size + 8} modules including quiet zone`);
@@ -108,7 +108,7 @@ console.log(`icons/icon.svg  v${code.version} ${size}x${size}`);
 // quarter of a pixel per module. So the favicon is the letterforms alone,
 // drawn from the same font, where 16 px leaves roughly two pixels per module.
 {
-  const font = FONT_BY_ID.pixel, text = 'QT', pad = 1;
+  const font = FONT_BY_ID.pixel, text = 'QR', pad = 1;
   const w = measure(font, text) + pad * 2;
   const side = Math.max(w, font.height + pad * 2);
   const ox = Math.floor((side - measure(font, text)) / 2);

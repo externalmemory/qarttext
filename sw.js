@@ -8,7 +8,7 @@
 //
 // Bump BUILD whenever the shell changes; it names the cache and is shown in
 // the page footer so it is obvious which version is actually loaded.
-const BUILD = '2026-08-20.4';
+const BUILD = '2026-08-20.5';
 const CACHE = `hrqr-${BUILD}`;
 
 const SHELL = [
