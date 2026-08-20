@@ -1,0 +1,11 @@
+# Cloudflare Pages response headers.
+#
+# no-cache does not mean "do not cache": it means revalidate before use. The
+# browser keeps the file and gets a 304 when it is unchanged, so a deploy is
+# live on the next load rather than up to ten minutes later. The whole app is
+# about 150 KB, so there is nothing to gain by holding it longer.
+/*
+  Cache-Control: no-cache
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: no-referrer
+  Content-Security-Policy: default-src 'self'; script-src 'self'; worker-src 'self'; style-src 'self'; img-src 'self' data: blob:; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'

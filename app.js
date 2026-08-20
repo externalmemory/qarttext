@@ -156,7 +156,9 @@ function select(r, card, keepEdits = false) {
   redrawBig();
 
   const s = r.stats;
-  els.stats.innerHTML = [
+  // Built as nodes rather than markup: the label comes from whatever was typed
+  // in, and interpolating that into innerHTML would make it executable.
+  els.stats.replaceChildren(...[
     ['symbol', `version ${r.version}, level ${r.ecl}, ${r.size}×${r.size}, mask ${r.mask}`],
     ['text', r.lines.map(l => `“${l}”`).join(' / ')],
     ['free bits', `${s.freeBits} of ${s.dataCodewords * 8} data bits`],
@@ -164,7 +166,13 @@ function select(r, card, keepEdits = false) {
     ['letterforms', s.inkMisses === 0 ? `all ${s.inkTotal} exact` : `${s.inkMisses} of ${s.inkTotal} stuck`],
     ['plate fidelity', `${(s.fidelity * 100).toFixed(2)}%`],
     ['print at least', `${minPrintWidthMm(r)} mm wide (${MM_PER_MODULE} mm per module — a rule of thumb, not a spec)`],
-  ].map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join('');
+  ].flatMap(([key, value]) => {
+    const dt = document.createElement('dt');
+    dt.textContent = key;
+    const dd = document.createElement('dd');
+    dd.textContent = value;
+    return [dt, dd];
+  }));
 
   els.offsetOut.textContent = r.offset
     ? `x ${r.offset.x} of ${r.bounds.maxX}, y ${r.offset.y} of ${r.bounds.maxY}`
@@ -379,7 +387,7 @@ function setStatus(text, isError = false) {
 
 // Keep in step with BUILD in sw.js; shown in the footer so it is obvious which
 // version is loaded when something looks out of date.
-const BUILD = '2026-08-20.2';
+const BUILD = '2026-08-20.3';
 document.getElementById('build').textContent = BUILD;
 
 if ('serviceWorker' in navigator) {
