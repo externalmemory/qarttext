@@ -72,7 +72,16 @@ h3 { font-size: 0.95rem; margin: 0 0 0.5rem; }
   flex-wrap: wrap;
   margin-top: 1.5rem;
 }
-.entry .field { flex: 1 1 22rem; }
+.entry .kind { flex: 0 0 7.5rem; }
+.fields { display: flex; gap: 0.6rem; flex: 1 1 20rem; flex-wrap: wrap; align-items: flex-end; }
+.fields[hidden] { display: none; }
+.fields .field { flex: 1 1 10rem; }
+.check {
+  display: flex; align-items: center; gap: 0.4rem;
+  font-family: var(--mono); font-size: 0.72rem; color: var(--dim);
+  padding-bottom: 0.6rem; white-space: nowrap;
+}
+.check input { accent-color: var(--accent); }
 
 .field { display: flex; flex-direction: column; gap: 0.3rem; min-width: 0; }
 .field > span {

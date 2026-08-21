@@ -1,10 +1,13 @@
 import { FONTS, FONT_BY_ID } from './src/fonts.js';
 import { STYLES, STYLE_BY_ID } from './src/layout.js';
+import { buildPayload } from './src/payload.js';
 import { toSVG, drawToCanvas, drawEditable, moduleAt, scaleFor, svgBlob, canvasToPngBlob, filenameFor, minPrintWidthMm, MM_PER_MODULE, DEFAULT_QUIET } from './src/render.js';
 
 const $ = (id) => document.getElementById(id);
 const els = {
-  form: $('form'), url: $('url'), go: $('go'),
+  form: $('form'), url: $('url'), go: $('go'), type: $('type'),
+  tel: $('tel'), ssid: $('ssid'), wifiPass: $('wifiPass'), wifiAuth: $('wifiAuth'),
+  wifiHidden: $('wifiHidden'), payloadWarn: $('payloadWarn'),
   ecl: $('ecl'), maxLines: $('maxLines'), label: $('label'),
   clearance: $('clearance'), offsetOut: $('offsetOut'), autoPlace: $('autoPlace'),
   editState: $('editState'), clearEdits: $('clearEdits'),
@@ -60,14 +63,36 @@ function send(message, onMessage) {
 
 function readOptions() {
   const override = els.label.value.trim();
+  const type = els.type.value;
+  const { payload, label, warning } = buildPayload({
+    type,
+    url: els.url.value,
+    number: els.tel.value,
+    ssid: els.ssid.value,
+    password: els.wifiPass.value,
+    auth: els.wifiAuth.value,
+    hidden: els.wifiHidden.checked,
+  });
+  els.payloadWarn.textContent = warning ?? '';
+  els.payloadWarn.hidden = !warning;
   return {
-    url: els.url.value.trim(),
+    payload, label,
     ecl: els.ecl.value,
     maxLines: Number(els.maxLines.value),
     clearance: Number(els.clearance.value),
     text: override || null,
   };
 }
+
+// Only the fields belonging to the selected kind are shown.
+function showFields() {
+  const type = els.type.value;
+  for (const id of ['url', 'tel', 'wifi']) {
+    document.getElementById(`fields-${id}`).hidden = id !== type;
+  }
+}
+els.type.addEventListener('change', () => { showFields(); run(); });
+showFields();
 
 function colours() {
   return { dark: els.dark.value, light: els.light.value };
@@ -345,7 +370,8 @@ els.form.addEventListener('submit', (e) => {
 
 function run() {
   const opts = readOptions();
-  if (!opts.url) { setStatus('Enter a URL first.', true); return; }
+  if (!opts.payload) { setStatus('Fill in the field above first.', true); return; }
+  if (!opts.label) { setStatus('Nothing to write inside the code.', true); return; }
 
   const tk = ++token;
   els.go.disabled = true;
@@ -389,7 +415,7 @@ function setStatus(text, isError = false) {
 
 // Keep in step with BUILD in sw.js; shown in the footer so it is obvious which
 // version is loaded when something looks out of date.
-const BUILD = '2026-08-20.6';
+const BUILD = '2026-08-21.1';
 document.getElementById('build').textContent = BUILD;
 
 if ('serviceWorker' in navigator) {

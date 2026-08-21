@@ -1,7 +1,8 @@
 # QartText
 
-QR codes with the domain name written legibly inside them, in a bitmap font —
-and **without spending any of the error-correction redundancy**.
+QR codes with the domain name, phone number or network name written legibly
+inside them, in a bitmap font — and **without spending any of the
+error-correction redundancy**.
 
 Named for Russ Cox's [QArt codes](https://research.swtch.com/qart), the
 construction it is built on, with type in place of the picture.
@@ -15,9 +16,34 @@ python3 -m http.server 8000     # then visit http://localhost:8000/
 
 ![the app icon, which is itself a human-readable QR code](icons/icon-512.png)
 
+## Kinds of code
+
+| kind | encodes | drawn inside |
+| --- | --- | --- |
+| URL | `https://example.com/` | the host name |
+| Phone | `tel:+15551234567` | the number as you typed it, `+1(555)123-4567` |
+| Wi-Fi | `WIFI:T:WPA;S:Free WiFi;P:Swordfish;;` | the network name |
+
+Only the payload builder and the label differ; the encoder, solver, placement
+and fonts are shared, and none of them needed changing to add a kind.
+
+The Wi-Fi format separates fields with semicolons and keys from values with
+colons, so `\ ; , : "` must be escaped inside a value. Getting that wrong does
+not produce a broken code — it produces one that scans perfectly and silently
+truncates the password at the first semicolon, or joins the wrong network. The
+builder escapes them, quotes values that would otherwise read as hex, and the
+tests round-trip every payload back through an independent parser.
+
+A Wi-Fi code carries the password in clear text: anyone who scans or photographs
+it can join the network. The app says so next to the fields.
+
+The fonts cover printable ASCII. Anything outside it — accented letters, other
+scripts, emoji — draws as `?`. That affects only the label; the payload is
+always encoded exactly.
+
 ## What it does
 
-You give it a URL. It gives you nine treatments of that URL as a QR code, each
+You give it a URL, a phone number, or Wi-Fi credentials. It gives you nine treatments of that URL as a QR code, each
 with the domain name rendered in the middle of the symbol, and lets you download
 whichever you prefer as PNG or SVG.
 
@@ -83,7 +109,7 @@ often costs you a larger code but buys back fidelity.
 | Error correction | `L` leaves the most room for artwork, `H` the least. `M` is a good default. |
 | Maximum lines | How many lines a long domain may wrap onto. Breaks are taken after a dot or a hyphen. |
 | Clearance | Rings of whitespace between the letterforms and the surrounding noise. Half steps allowed. Default 2. |
-| Text override | Draw something other than the domain. |
+| Text override | Draw something other than the default label. |
 
 Three fonts, all authored for this project, times four styles make the twelve
 variants, laid out as a grid with fonts named across the top and styles running
@@ -248,6 +274,7 @@ src/fonts.js          bitmap fonts
 src/layout.js         URL to label, wrapping, target selection
 src/generate.js       version search and mask choice
 src/variants.js       the gallery
+src/payload.js        URL, phone and Wi-Fi payloads, and their labels
 src/render.js         SVG and PNG output
 scripts/make-icons.mjs  builds the icons using the app's own encoder
 ```

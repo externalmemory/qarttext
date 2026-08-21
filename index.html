@@ -16,21 +16,62 @@
 <header class="masthead">
   <h1>QartText</h1>
   <p class="lede">
-    The domain name, written in a bitmap font, inside the code itself &mdash; and
-    <strong>not</strong> at the cost of error correction. Every code here is a fully
+    The domain name, phone number or network name, written in a bitmap font inside
+    the code itself &mdash; and <strong>not</strong> at the cost of error correction. Every code here is a fully
     valid QR symbol with its redundancy completely intact.
   </p>
 </header>
 
 <main>
   <form id="form" class="entry">
-    <label class="field">
-      <span>URL</span>
-      <input id="url" type="text" inputmode="url" spellcheck="false" autocapitalize="off"
-             value="https://example.com/" placeholder="https://example.com/page">
+    <label class="field kind">
+      <span>Kind</span>
+      <select id="type">
+        <option value="url" selected>URL</option>
+        <option value="tel">Phone</option>
+        <option value="wifi">Wi-Fi</option>
+      </select>
     </label>
+
+    <div class="fields" id="fields-url">
+      <label class="field">
+        <span>URL</span>
+        <input id="url" type="text" inputmode="url" spellcheck="false" autocapitalize="off"
+               value="https://example.com/" placeholder="https://example.com/page">
+      </label>
+    </div>
+
+    <div class="fields" id="fields-tel" hidden>
+      <label class="field">
+        <span>Phone number</span>
+        <input id="tel" type="text" inputmode="tel" spellcheck="false" autocapitalize="off"
+               value="+1(555)123-4567" placeholder="+1(555)123-4567">
+      </label>
+    </div>
+
+    <div class="fields" id="fields-wifi" hidden>
+      <label class="field">
+        <span>Network name</span>
+        <input id="ssid" type="text" spellcheck="false" autocapitalize="off" value="Free WiFi">
+      </label>
+      <label class="field">
+        <span>Password</span>
+        <input id="wifiPass" type="text" spellcheck="false" autocapitalize="off" value="Swordfish">
+      </label>
+      <label class="field">
+        <span>Security</span>
+        <select id="wifiAuth">
+          <option value="WPA" selected>WPA/WPA2/WPA3</option>
+          <option value="WEP">WEP</option>
+          <option value="nopass">None (open)</option>
+        </select>
+      </label>
+      <label class="check"><input id="wifiHidden" type="checkbox"> Hidden network</label>
+    </div>
+
     <button id="go" type="submit">Generate</button>
   </form>
+  <p class="warn" id="payloadWarn" hidden></p>
 
   <details class="options" id="options">
     <summary>Options</summary>
@@ -76,7 +117,7 @@
 
   <section class="gallery-wrap" id="galleryWrap" hidden>
     <h2>Pick one</h2>
-    <p class="hint">Twelve treatments of the same URL: fonts across, extent and inversion down.
+    <p class="hint">Twelve treatments of the same code: fonts across, extent and inversion down.
       Whitespace is what makes the text readable, so raise <em>Clearance</em> if a variant
       is fighting the noise around it. A half step clears its outermost ring only
       partly, stippling it, which softens the edge and costs fewer forced modules than
@@ -96,7 +137,7 @@
           <span id="detailCaption"></span><br>
           <span class="key">
             <span class="key-row"><span class="chip fixed-dark"></span><span class="chip fixed-light"></span>
-              fixed &mdash; function patterns and modules carrying the URL itself</span>
+              fixed &mdash; function patterns and modules carrying the payload itself</span>
             <span class="key-row"><span class="chip free-dark"></span><span class="chip free-light"></span>
               free &mdash; click any of these to flip it; the solver rebuilds the rest</span>
           </span>
@@ -152,11 +193,12 @@
       from <em>data bits</em> to <em>module colours</em> is affine over GF(2).
     </p>
     <p>
-      The URL occupies the first few hundred bits. Everything after the four-bit
-      terminator is padding, which decoders never read &mdash; so those bits are free
+      The payload &mdash; a URL, a <code>tel:</code> number, a <code>WIFI:</code>
+      descriptor &mdash; occupies the first few hundred bits. Everything after the
+      four-bit terminator is padding, which decoders never read, so those bits are free
       variables. Writing one column per free bit and one row per module we want to
       control gives a linear system; Gauss&ndash;Jordan elimination over GF(2) solves it.
-      The answer is a genuine codeword that both spells out the URL and paints the
+      The answer is a genuine codeword that both carries the payload and paints the
       picture.
     </p>
     <p>
@@ -164,11 +206,11 @@
       budget survives for real-world wear. This is Russ Cox&rsquo;s
       <a href="https://research.swtch.com/qart">QArt</a> construction, with the artwork
       being type rather than an image. Cox bought his free bits by appending junk to the
-      URL; taking them from the padding instead leaves the URL byte-for-byte intact.
+      URL; taking them from the padding instead leaves the payload byte-for-byte intact.
     </p>
     <p>
-      Where a module carries a bit of the URL itself, it cannot be moved &mdash; those
-      few pixels come out wherever the URL puts them. The app reports the count as
+      Where a module carries a bit of the payload itself, it cannot be moved &mdash; those
+      few pixels come out wherever the payload puts them. The app reports the count as
       <em>fidelity</em> and picks the symbol size and position that minimise it,
       always protecting the letterforms first.
     </p>

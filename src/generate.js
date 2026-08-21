@@ -24,6 +24,8 @@ export const MIN_FREE_RATIO = 1.5;
  */
 export function generate({
   url,
+  payload = null,
+  label: labelIn = null,
   text = null,
   ecl = 'M',
   fontId = 'lower',
@@ -35,9 +37,12 @@ export function generate({
   offset = null,
   overrides = null,
 }) {
-  const encoded = normaliseUrl(url);
+  // Callers may hand over exactly what to encode and exactly what to draw; a
+  // bare url is the shorthand for the common case.
+  const encoded = payload ?? normaliseUrl(url);
+  if (!encoded) return null;
   const bytes = utf8Bytes(encoded);
-  const label = (text ?? domainOf(encoded)).trim();
+  const label = (text ?? labelIn ?? domainOf(encoded)).trim();
   if (!label) return null;
 
   const font = FONT_BY_ID[fontId];
