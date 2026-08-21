@@ -4,7 +4,7 @@
 // care where either came from, so a new kind of code is only these two
 // functions -- the encoder, solver, placement and fonts are untouched.
 
-import { normaliseUrl, domainOf } from './layout.js';
+import { normalizeUrl, domainOf } from './layout.js';
 
 export const TYPES = [
   { id: 'url', name: 'URL' },
@@ -76,7 +76,7 @@ export function buildPayload(spec) {
       };
     }
     default: {
-      const payload = normaliseUrl(spec.url ?? '');
+      const payload = normalizeUrl(spec.url ?? '');
       return { payload, label: domainOf(payload) };
     }
   }

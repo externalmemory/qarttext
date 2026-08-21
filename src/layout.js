@@ -67,8 +67,8 @@ export function domainOf(input) {
   return host.replace(/^www\./i, '') || raw;
 }
 
-/** Normalises what the user typed into the URL that will actually be encoded. */
-export function normaliseUrl(input) {
+/** Normalizes what the user typed into the URL that will actually be encoded. */
+export function normalizeUrl(input) {
   const s = String(input).trim();
   if (!s) return '';
   if (/^[a-z][a-z0-9+.-]*:\/\//i.test(s)) return s;
@@ -204,13 +204,13 @@ export function placeText({
     }
   }
 
-  const centreX = Math.floor((size - boxW) / 2);
-  const centreY = Math.floor((size - boxH) / 2);
+  const centerX = Math.floor((size - boxW) / 2);
+  const centerY = Math.floor((size - boxH) / 2);
 
   // A module we cannot control only costs us when its fixed value disagrees
   // with what we want. Function patterns have known values, so this lets the
-  // text settle where the structure already happens to be right -- a full stop
-  // landing on the dark centre of an alignment pattern is free, and snaps
+  // text settle where the structure already happens to be right -- a period
+  // landing on the dark center of an alignment pattern is free, and snaps
   // there of its own accord.
   const costAt = (idx, want, weight) => {
     if (!pinned[idx]) return 0;
@@ -236,11 +236,11 @@ export function placeText({
     };
   } else {
     const tol = Math.max(4, Math.round(0.02 * boxW * boxH));
-    let bestCost = place(centreX, centreY, Infinity);
-    const candidates = [{ x0: centreX, y0: centreY, cost: bestCost }];
+    let bestCost = place(centerX, centerY, Infinity);
+    const candidates = [{ x0: centerX, y0: centerY, cost: bestCost }];
     for (let y0 = 0; y0 + boxH <= size; y0++) {
       for (let x0 = 0; x0 + boxW <= size; x0++) {
-        if (x0 === centreX && y0 === centreY) continue;
+        if (x0 === centerX && y0 === centerY) continue;
         const cost = place(x0, y0, bestCost + tol);
         if (cost === Infinity) continue;
         if (cost < bestCost) bestCost = cost;
@@ -251,8 +251,8 @@ export function placeText({
     // module, which costs 1000 -- sit as close to the middle as possible.
     const viable = candidates.filter(c => c.cost <= bestCost + tol);
     viable.sort((a, b) =>
-      (Math.abs(a.y0 - centreY) + Math.abs(a.x0 - centreX)) -
-      (Math.abs(b.y0 - centreY) + Math.abs(b.x0 - centreX)));
+      (Math.abs(a.y0 - centerY) + Math.abs(a.x0 - centerX)) -
+      (Math.abs(b.y0 - centerY) + Math.abs(b.x0 - centerX)));
     chosen = viable[0];
   }
 

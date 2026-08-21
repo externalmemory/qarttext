@@ -54,7 +54,7 @@ function mix(a, b, t) {
  * Preview used for editing. Modules that cannot be changed -- function
  * patterns, and modules carrying bits of the URL itself -- are drawn in full
  * black and white; everything the solver is free to move is drawn in muted
- * greys derived from the same pair, so the two readings stay comparable.
+ * grays derived from the same pair, so the two readings stay comparable.
  * Exported PNG and SVG are always plain black and white.
  */
 export function drawEditable(result, canvas, {

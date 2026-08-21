@@ -162,7 +162,7 @@ export function penaltyScore(modules, size) {
   const at = (r, c) => modules[r * size + c];
   let result = 0;
 
-  // Rule 1: runs of five or more same-coloured modules in a row or column.
+  // Rule 1: runs of five or more same-colored modules in a row or column.
   for (let i = 0; i < size; i++) {
     for (const horizontal of [true, false]) {
       let run = 1;
@@ -175,7 +175,7 @@ export function penaltyScore(modules, size) {
     }
   }
 
-  // Rule 2: 2x2 blocks of one colour.
+  // Rule 2: 2x2 blocks of one color.
   for (let r = 0; r < size - 1; r++) {
     for (let c = 0; c < size - 1; c++) {
       const v = at(r, c);

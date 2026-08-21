@@ -95,7 +95,7 @@ function showFields() {
 els.type.addEventListener('change', () => { showFields(); run(); });
 showFields();
 
-function colours() {
+function colors() {
   return { dark: els.dark.value, light: els.light.value };
 }
 
@@ -153,7 +153,7 @@ function makeCard(r) {
   }
 
   const canvas = document.createElement('canvas');
-  drawToCanvas(r, canvas, { scale: scaleFor(r.size, 320), quiet: DEFAULT_QUIET, ...colours() });
+  drawToCanvas(r, canvas, { scale: scaleFor(r.size, 320), quiet: DEFAULT_QUIET, ...colors() });
 
   const perfect = r.stats.inkMisses === 0;
   const meta = document.createElement('div');
@@ -215,7 +215,7 @@ function showEditState(message = null) {
   const n = overrides.size;
   els.clearEdits.hidden = n === 0;
   els.editState.textContent = message
-    ?? (n === 0 ? 'Click a grey module in the preview to flip it.'
+    ?? (n === 0 ? 'Click a gray module in the preview to flip it.'
                 : `${n} module${n === 1 ? '' : 's'} set by hand.`);
 }
 
@@ -243,7 +243,7 @@ els.clearEdits.addEventListener('click', () => {
 
 // A direction is only offered when the box can actually travel that way: with
 // a text block nearly as wide as the symbol there may be no horizontal room at
-// all, and a dead button that silently does nothing is worse than a greyed one.
+// all, and a dead button that silently does nothing is worse than a grayed one.
 function setNudgeEnabled(on) {
   const auto = document.getElementById('autoPlace');
   auto.disabled = !on;
@@ -283,7 +283,7 @@ function replace(extra) {
     if (selectedCard) {
       const canvas = selectedCard.querySelector('canvas');
       if (canvas) {
-        drawToCanvas(msg.result, canvas, { scale: scaleFor(msg.result.size, 320), quiet: DEFAULT_QUIET, ...colours() });
+        drawToCanvas(msg.result, canvas, { scale: scaleFor(msg.result.size, 320), quiet: DEFAULT_QUIET, ...colors() });
         painted.set(canvas, msg.result);
       }
     }
@@ -305,14 +305,14 @@ function redrawBig() {
   if (!selected) return;
   const scale = Number(els.scale.value);
   els.scaleOut.textContent = scale;
-  drawEditable(selected, els.bigCanvas, { scale, quiet: DEFAULT_QUIET, ...colours() });
+  drawEditable(selected, els.bigCanvas, { scale, quiet: DEFAULT_QUIET, ...colors() });
   els.contrastWarn.hidden = contrastRatio(els.dark.value, els.light.value) >= 3;
 }
 
 // Warns on inverted *and* merely weak pairings; both defeat a binariser.
 function contrastRatio(darkHex, lightHex) {
   const d = luminance(darkHex), l = luminance(lightHex);
-  if (d >= l) return 0; // inverted: dark modules must be the darker colour
+  if (d >= l) return 0; // inverted: dark modules must be the darker color
   return (l + 0.05) / (d + 0.05);
 }
 
@@ -340,14 +340,14 @@ function saveBlob(blob, filename) {
 
 els.dlSvg.addEventListener('click', () => {
   if (!selected) return;
-  const svg = toSVG(selected, { scale: Number(els.scale.value), quiet: DEFAULT_QUIET, ...colours() });
+  const svg = toSVG(selected, { scale: Number(els.scale.value), quiet: DEFAULT_QUIET, ...colors() });
   saveBlob(svgBlob(svg), `${filenameFor(selected)}.svg`);
 });
 
 els.dlPng.addEventListener('click', async () => {
   if (!selected) return;
   const canvas = document.createElement('canvas');
-  drawToCanvas(selected, canvas, { scale: Number(els.scale.value), quiet: DEFAULT_QUIET, ...colours() });
+  drawToCanvas(selected, canvas, { scale: Number(els.scale.value), quiet: DEFAULT_QUIET, ...colors() });
   saveBlob(await canvasToPngBlob(canvas), `${filenameFor(selected)}.png`);
 });
 
@@ -358,7 +358,7 @@ els.light.addEventListener('input', () => { redrawBig(); repaintGallery(); });
 const painted = new Map();
 function repaintGallery() {
   for (const [canvas, r] of painted) {
-    drawToCanvas(r, canvas, { scale: scaleFor(r.size, 320), quiet: DEFAULT_QUIET, ...colours() });
+    drawToCanvas(r, canvas, { scale: scaleFor(r.size, 320), quiet: DEFAULT_QUIET, ...colors() });
   }
 }
 
@@ -459,7 +459,7 @@ function setStatus(text, isError = false) {
 
 // Keep in step with BUILD in sw.js; shown in the footer so it is obvious which
 // version is loaded when something looks out of date.
-const BUILD = '2026-08-21.3';
+const BUILD = '2026-08-21.4';
 document.getElementById('build').textContent = BUILD;
 
 if ('serviceWorker' in navigator) {

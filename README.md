@@ -7,7 +7,7 @@ error-correction redundancy**.
 Named for Russ Cox's [QArt codes](https://research.swtch.com/qart), the
 construction it is built on, with text in place of the picture.
 
-Live app: open `index.html` from any static web server or go to 
+Live app: open `index.html` from any static web server or go to
 [qarttext.pages.dev](https://qarttext.pages.dev/). It is a progressive web
 app with no external dependencies, no build step, and no network calls.
 
@@ -63,10 +63,10 @@ reads exactly the declared number of bytes and stops. So every padding bit is a
 free variable.
 
 Write one matrix column per free bit and one row per module you want to control,
-then run Gauss–Jordan elimination over GF(2). The solution is a Reed–Solomon 
+then run Gauss–Jordan elimination over GF(2). The solution is a Reed–Solomon
 codeword that simultaneously spells out the URL and paints the picture.
 
-Cox bought his free bits by appending HTML anchor to the URL. Taking them from the
+Cox bought his free bits by appending random characters to the URL's `#` fragment. Taking them from the
 padding instead leaves the URL **byte-for-byte identical** to what you typed.
 
 ### Key Assumption
@@ -100,7 +100,7 @@ often costs you a larger code but buys back fidelity.
 
 Three fonts, all authored for this project, times four styles make the twelve
 variants, laid out as a grid with fonts named across the top and styles running
-down. The styles are not labelled: plate against halo, and upright against
+down. The styles are not labeled: plate against halo, and upright against
 inverted, are plain from the pictures, and on a phone a column of labels costs
 more width than the codes. Each card carries its own name for a screen reader
 or a hover instead. The fonts are
@@ -137,9 +137,9 @@ Line breaks are taken after a dot or a hyphen, both of which stay at the end of
 the line where they read as deliberate.
 
 Text is drawn in **whatever case you type**. The label keeps the case of the
-host as entered, which means the host is pulled out of the string by hand, since 
-`new URL().hostname` is lower-cased by the URL specification. Nothing forces 
-case anywhere: a single-case font simply has no glyph for the other case, 
+host as entered, which means the host is pulled out of the string by hand, since
+`new URL().hostname` is lower-cased by the URL specification. Nothing forces
+case anywhere: a single-case font simply has no glyph for the other case,
 so the lookup falls back to the one it does have.
 
 ## Symbol Size
@@ -165,19 +165,19 @@ for the best spot rather than simply centering.
 The scoring rule is that **a module we cannot control only costs us when its
 fixed value disagrees with what we want.** Function patterns have known values,
 so this lets the text settle where the symbol's own structure already happens to
-be right: a full stop landing on the dark center of an alignment pattern is
+be right: a period landing on the dark center of an alignment pattern is
 free, a stroke crossing the dark modules of the timing line is free, and the
 light ring inside an alignment pattern can serve as part of the clearance.
 
 The detail panel exposes a nudge pad if you want to place the text by hand;
-each nudge re-solves from scratch, and directions with no room are greyed out.
+each nudge re-solves from scratch, and directions with no room are grayed out.
 
 ## Manual Editing
 
 The large preview is editable. Click any module and it flips; the solver then
 re-runs and rebuilds everything else around it, so the result is still a valid
-Reed–Solomon codeword with its error correction untouched. Hand-set modules 
-outrank the letterforms in the priority ladder, so a click always wins; what 
+Reed–Solomon codeword with its error correction untouched. Hand-set modules
+outrank the letterforms in the priority ladder, so a click always wins; what
 gives way is the plate behind it.
 
 The preview is color-coded to show what a click can do:
@@ -185,17 +185,17 @@ The preview is color-coded to show what a click can do:
 | | dark | light |
 | --- | --- | --- |
 | **fixed**: function patterns, and modules carrying bits of the URL itself | black | white |
-| **free**: anything the solver can move | dark grey | light grey |
+| **free**: anything the solver can move | dark gray | light gray |
 
-The greys are a guide for editing only: the gallery images and the exported PNG 
+The grays are a guide for editing only: the gallery images and the exported PNG
 and SVG are strictly black and white.
 
 ### No Rotation
 
 Readers establish orientation from the finder patterns, so a symbol can be
 turned through any quarter turn and still scan. That looks like four more
-degrees of freedom. The zig-zag lays out codewords in column pairs, so the 
-payload's immovable modules cluster into columns, and a text band turned to 
+degrees of freedom. The zig-zag lays out codewords in column pairs, so the
+payload's immovable modules cluster into columns, and a text band turned to
 run the other way meets fewer of them, often none at all.
 
 But it makes the output worse. Across the 380-case sweep, searching all four
@@ -298,7 +298,7 @@ an independent decoder that re-reads the rendered grid and confirms every
 Reed–Solomon syndrome is zero: the symbol is not merely readable but
 carries its full, unspent correction capacity.
 
-A sweep of 600 combinations (12 URLs × 4 correction levels × 3 fonts × 4 styles) 
+A sweep of 576 combinations (12 URLs × 4 correction levels × 3 fonts × 4 styles)
 decodes to the exact input URL with zero syndromes and zero
 SVG/canvas mismatches. The downloaded PNG and SVG files themselves were read
 back and decoded to confirm the exported artifacts, not just the in-memory grid.

@@ -5,7 +5,7 @@ import { penaltyScore } from './matrix.js';
 import { applyMask, utf8Bytes, smallestVersion, payloadBits } from './encode.js';
 import { solve, pinnedModuleMap } from './qart.js';
 import { FONT_BY_ID } from './fonts.js';
-import { resolveStyle, placeText, wrapText, domainOf, normaliseUrl, DEFAULT_CLEARANCE, INK_WEIGHT, OVERRIDE_WEIGHT } from './layout.js';
+import { resolveStyle, placeText, wrapText, domainOf, normalizeUrl, DEFAULT_CLEARANCE, INK_WEIGHT, OVERRIDE_WEIGHT } from './layout.js';
 
 // How many workable symbol sizes to try before settling for the best so far.
 // There is no fixed ceiling imposed by scanners: a large symbol reads fine if
@@ -39,7 +39,7 @@ export function generate({
 }) {
   // Callers may hand over exactly what to encode and exactly what to draw; a
   // bare url is the shorthand for the common case.
-  const encoded = payload ?? normaliseUrl(url);
+  const encoded = payload ?? normalizeUrl(url);
   if (!encoded) return null;
   const bytes = utf8Bytes(encoded);
   const label = (text ?? labelIn ?? domainOf(encoded)).trim();
@@ -132,7 +132,7 @@ function attemptVersion({ version, ecl, bytes, label, font, style, fontId, style
     fontId, styleId, margin, clearance: placed.clearance,
     rect: placed.rect, offset: placed.offset, bounds: placed.bounds,
     // 1 where a module can still be changed; the editor needs this to know
-    // which clicks are possible and to colour the preview
+    // which clicks are possible and to color the preview
     editable: pin.map.map(v => v ^ 1),
     stats: {
       freeBits: res.freeBits,

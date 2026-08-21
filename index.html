@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>QartText</title>
-<meta name="description" content="QR codes with the human-readable text written inside them, without spending any error-correction capacity.">
+<meta name="description" content="QR codes with human-readable text written inside them, without spending any error-correction capacity.">
 <meta name="theme-color" content="#101014">
 <link rel="manifest" href="./manifest.webmanifest">
 <!-- letterforms only: a QR is illegible at 16 px -->
@@ -159,7 +159,7 @@
             <button type="button" data-dx="1"  data-dy="1" title="down and right">&#8600;</button>
           </div>
           <p class="hint nudge-hint">Each nudge re-solves from scratch. Watch the fidelity figure:
-            sliding the text so a full stop meets an alignment square, or a stroke meets the
+            sliding the text so a period meets an alignment square, or a stroke meets the
             timing line, costs nothing and can gain you modules.</p>
         </div>
         <div class="field">
@@ -180,7 +180,7 @@
           <button id="dlSvg" type="button">Download SVG</button>
           <button id="clearEdits" type="button" class="ghost" hidden>Undo edits</button>
         </div>
-        <p class="hint">Exports contain only the two colours above, never the greys, which mark editable modules in the preview only.</p>
+        <p class="hint">Exports contain only the two colors above, never the grays, which mark editable modules in the preview only.</p>
       </div>
     </div>
   </section>
@@ -201,7 +201,7 @@
     <p>
       A QR code&rsquo;s Reed&ndash;Solomon code is linear over GF(256), the block
       interleaving is a permutation, and the mask is a fixed XOR. Composed, the map
-      from <em>data bits</em> to <em>module colours</em> is affine over GF(2).
+      from <em>data bits</em> to <em>module colors</em> is affine over GF(2).
     </p>
     <p>
       The payload (a URL, a <code>tel:</code> number, a <code>WIFI:</code>
@@ -222,7 +222,7 @@
     <p>
       Where a module carries a bit of the payload itself, it cannot be moved, and those
       few pixels come out wherever the payload puts them. The app reports the count as
-      <em>fidelity</em> and picks the symbol size and position that minimise it,
+      <em>fidelity</em> and picks the symbol size and position that minimize it,
       always protecting the letterforms first.
     </p>
   </section>
