@@ -198,9 +198,10 @@ degrees of freedom. The zig-zag lays out codewords in column pairs, so the
 payload's immovable modules cluster into columns, and a text band turned to
 run the other way meets fewer of them, often none at all.
 
-But it makes the output worse. Across the 380-case sweep, searching all four
-orientations raised the number of variants with a stuck letterform from 16 to
-43, and dropped worst-case plate fidelity from 95.7% to 91.5%.
+But it makes the output worse. Across the sweep as it stood then, 380 cases,
+searching all four
+orientations raised the number of variants with a stuck letterform from 16 to 43,
+and dropped worst-case plate fidelity from 95.7% to 91.5%.
 
 The reason is that the count of immovable modules is not the binding
 constraint. Reed–Solomon blocks are *independent*: a block's error-correction
@@ -302,6 +303,16 @@ A sweep of 576 combinations (12 URLs × 4 correction levels × 3 fonts × 4 styl
 decodes to the exact input URL with zero syndromes and zero
 SVG/canvas mismatches. The downloaded PNG and SVG files themselves were read
 back and decoded to confirm the exported artifacts, not just the in-memory grid.
+
+A further 432 combinations cover the phone and Wi-Fi payloads, and every Wi-Fi
+payload is parsed back by an independent parser to confirm the escaping
+survives: a semicolon in a password has to come out as a semicolon, not as the
+end of the field.
+
+## License
+
+MIT, see [LICENSE](LICENSE). The glyph tables in `src/fonts.js` are original
+work and covered by it too.
 
 ## Credits
 
