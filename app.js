@@ -1,6 +1,7 @@
 import { FONTS, FONT_BY_ID } from './src/fonts.js';
 import { STYLES, STYLE_BY_ID } from './src/layout.js';
 import { buildPayload } from './src/payload.js';
+import { installHint, isInstalled } from './src/install.js';
 import { toSVG, drawToCanvas, drawEditable, moduleAt, scaleFor, svgBlob, canvasToPngBlob, filenameFor, minPrintWidthMm, MM_PER_MODULE, DEFAULT_QUIET } from './src/render.js';
 
 const $ = (id) => document.getElementById(id);
@@ -411,11 +412,54 @@ function setStatus(text, isError = false) {
   els.status.classList.toggle('error', isError);
 }
 
+// ------------------------------------------------------------------ install
+
+// "Progressive web app" means nothing to most people, so this says what
+// installing actually gets you and how to do it here. Chrome and Edge offer a
+// real prompt, which is exact; everywhere else the best available is a short
+// instruction, and iOS in particular never prompts at all.
+(() => {
+  const section = document.getElementById('install');
+  const how = document.getElementById('installHow');
+  const button = document.getElementById('installGo');
+
+  if (isInstalled({
+    standaloneDisplay: matchMedia('(display-mode: standalone)').matches
+      || matchMedia('(display-mode: window-controls-overlay)').matches,
+    iosStandalone: navigator.standalone === true,
+  })) return;
+
+  how.textContent = installHint(navigator);
+  section.hidden = false;
+
+  // Chrome and Edge tell us when the app genuinely qualifies; prefer their
+  // prompt to any guess of ours.
+  let deferred = null;
+  window.addEventListener('beforeinstallprompt', (event) => {
+    event.preventDefault();
+    deferred = event;
+    how.textContent = 'Your browser can install it directly:';
+    button.hidden = false;
+  });
+  button.addEventListener('click', async () => {
+    if (!deferred) return;
+    button.disabled = true;
+    deferred.prompt();
+    const { outcome } = await deferred.userChoice;
+    deferred = null;
+    button.hidden = true;
+    how.textContent = outcome === 'accepted'
+      ? 'Installed. Look for QartText alongside your other apps.'
+      : 'Not installed. You can install it later from the browser menu.';
+  });
+  window.addEventListener('appinstalled', () => { section.hidden = true; });
+})();
+
 // ------------------------------------------------------------------ offline
 
 // Keep in step with BUILD in sw.js; shown in the footer so it is obvious which
 // version is loaded when something looks out of date.
-const BUILD = '2026-08-21.1';
+const BUILD = '2026-08-21.2';
 document.getElementById('build').textContent = BUILD;
 
 if ('serviceWorker' in navigator) {

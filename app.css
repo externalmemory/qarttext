@@ -293,7 +293,9 @@ table.gallery td {
 
 /* ------------------------------------------------------------------- about */
 
-.about p { max-width: 44rem; color: var(--dim); }
+.install p, .about p { max-width: 44rem; color: var(--dim); }
+.install p em, .install strong { color: var(--ink); font-style: normal; }
+.install button { margin-top: 0.25rem; }
 .about p em { color: var(--ink); font-style: normal; }
 .about a { color: var(--accent); }
 

@@ -304,6 +304,24 @@ scripts, styles and workers, `data:` and `blob:` images for the canvas exports,
 and nothing else — no framing, no object embeds, no base-URI rewriting. The app
 makes no network calls, so nothing needs relaxing.
 
+## Installing
+
+The page explains, in its own words rather than in the phrase "progressive web
+app", that it can be added to a home screen or dock and then works with no
+network. Chrome and Edge announce when the app genuinely qualifies, through
+`beforeinstallprompt`, and that offer is preferred to any guess — it is exact,
+and it only fires when the manifest, service worker and icons all check out.
+Everywhere else the best available is an instruction, and iOS in particular
+never prompts at all: Share, then Add to Home Screen, whichever browser you use.
+
+That branch lives in `src/install.js` rather than in the page, because it cannot
+be tested through a browser. Chrome fires `beforeinstallprompt` whatever user
+agent string it is told to report, and `display-mode` cannot be emulated over
+the DevTools protocol, so driving the page proves nothing about either branch.
+As a plain function it is checked against ten user agent strings, including
+iPadOS reporting itself as a Mac and Chrome on iOS, which still has to give the
+Share instruction because iOS allows nothing else.
+
 ## Updating
 
 The service worker is deliberately **network-first**, falling back to the cache
