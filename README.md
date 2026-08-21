@@ -1,7 +1,7 @@
 # QartText
 
 QR codes with the domain name, phone number or network name written legibly
-inside them, in a bitmap font — and **without spending any of the
+inside them, in a bitmap font, and **without spending any of the
 error-correction redundancy**.
 
 Named for Russ Cox's [QArt codes](https://research.swtch.com/qart), the
@@ -29,7 +29,7 @@ and fonts are shared, and none of them needed changing to add a kind.
 
 The Wi-Fi format separates fields with semicolons and keys from values with
 colons, so `\ ; , : "` must be escaped inside a value. Getting that wrong does
-not produce a broken code — it produces one that scans perfectly and silently
+not produce a broken code. It produces one that scans perfectly and silently
 truncates the password at the first semicolon, or joins the wrong network. The
 builder escapes them, quotes values that would otherwise read as hex, and the
 tests round-trip every payload back through an independent parser.
@@ -37,8 +37,8 @@ tests round-trip every payload back through an independent parser.
 A Wi-Fi code carries the password in clear text: anyone who scans or photographs
 it can join the network. The app says so next to the fields.
 
-The fonts cover printable ASCII. Anything outside it — accented letters, other
-scripts, emoji — draws as `?`. That affects only the label; the payload is
+The fonts cover printable ASCII. Anything outside it (accented letters, other
+scripts, emoji) draws as `?`. That affects only the label; the payload is
 always encoded exactly.
 
 ## What it does
@@ -68,7 +68,7 @@ over GF(2).
 
 The URL occupies the first few hundred data bits: a 4-bit mode indicator, a
 length field, the bytes themselves, then a 4-bit terminator. Everything after
-that terminator is padding, and a conforming decoder never looks at it — it
+that terminator is padding, and a conforming decoder never looks at it: it
 reads exactly the declared number of bytes and stops. So every padding bit is a
 free variable.
 
@@ -96,7 +96,7 @@ those pixels come out wherever the URL puts them. The app reports the count as
 *fidelity*, searches symbol sizes and vertical positions to minimise it, and
 always protects the letterforms ahead of the plate behind them. At levels L and
 M the letterforms are typically exact. At level H, where free bits are scarce,
-expect a handful of stuck pixels — the card tells you how many before you pick it.
+expect a handful of stuck pixels; the card tells you how many before you pick it.
 
 Clearance interacts with this: a smaller clearance lets the text fit in a
 smaller symbol, and a smaller symbol has fewer free bits. Raising clearance
@@ -118,13 +118,13 @@ inverted, are plain from the pictures, and on a phone a column of labels costs
 more width than the codes. Each card carries its own name for a screen reader
 or a hover instead. The fonts are
 `Micro 3×5` and `Pixel 5×7`, which hold a single case, and `Mixed 5×8`, which
-has real upper and lower case with descenders. The styles cross two choices —
+has real upper and lower case with descenders. The styles cross two choices:
 how far the forced region extends, and which way round the letters run:
 
 |  | upright | inverted |
 | --- | --- | --- |
-| **Plate** — a filled rectangle behind the text | light plate, dark letters | dark plate, light letters |
-| **Halo** — clearance around the strokes only, noise beyond | light clearance, dark letters | dark clearance, light letters |
+| **Plate**: a filled rectangle behind the text | light plate, dark letters | dark plate, light letters |
+| **Halo**: clearance around the strokes only, noise beyond | light clearance, dark letters | dark clearance, light letters |
 
 Whitespace is what makes the text readable, far more than the choice of font.
 Clearance of 1 leaves the letterforms fighting the surrounding noise.
@@ -134,7 +134,7 @@ completely and a third cleared only in part: an ordered 4×4 Bayer threshold
 picks half the modules of that outer ring to force light and leaves the rest to
 whatever the solver puts there. The edge then fades into the surrounding noise
 instead of stopping dead, and the partial ring costs about half the forced
-modules of a whole one — roughly 8% fewer across the whole layout, which
+modules of a whole one, roughly 8% fewer across the whole layout, which
 matters when free bits are scarce.
 
 It buys texture, not space: the box still extends by the full outer ring, so 2½
@@ -143,7 +143,7 @@ occupies what 3 would. Compared against 3 it is close to free; compared against
 
 Glyph widths are trimmed to their ink, so the one module of tracking between
 letters is the *only* gap. Left in, a blank edge column inside a glyph cell
-would add a second module of space after that letter alone — which is what made
+would add a second module of space after that letter alone, which is what made
 the gap between `r` and `g` in `dimview.org` wider than every other gap.
 
 Line breaks are taken after a dot or a hyphen, both of which stay at the end of
@@ -155,7 +155,7 @@ took `constructive-calculator.dimview.org` at three lines from a 137-module
 symbol down to 89.
 
 Text is drawn in **whatever case you type**. The label keeps the case of the
-host as entered — `DepartureMono.com` stays mixed — which means the host is
+host as entered (`DepartureMono.com` stays mixed), which means the host is
 pulled out of the string by hand, since `new URL().hostname` is lower-cased by
 the URL specification. Nothing forces case anywhere: a single-case font simply
 has no glyph for the other case, so the lookup falls back to the one it does
@@ -172,7 +172,7 @@ not the number of them.
 So the app searches for the smallest symbol whose letterforms come out exact
 and whose plate is clean, and reports the width that code needs to be printed.
 The millimetre figures assume 0.4 mm per module, a commonly cited rule of thumb
-for phone cameras at arm's length rather than a specification — give a code more
+for phone cameras at arm's length rather than a specification. Give a code more
 room if it will be read in poor light, at a distance, or off a low-resolution
 screen.
 
@@ -183,8 +183,8 @@ the budget being spent on sizes that were never going to work. Beyond that the
 search stops after twelve workable sizes, or as soon as one has exact
 letterforms and a plate above 98.5%.
 
-Note that fidelity is *not* monotonic in version — a larger symbol is usually
-but not always cleaner — so the search cannot simply stop at the first
+Note that fidelity is *not* monotonic in version (a larger symbol is usually
+but not always cleaner), so the search cannot simply stop at the first
 improvement.
 
 ## Placement
@@ -200,8 +200,8 @@ free, a stroke crossing the dark modules of the timing line is free, and the
 light ring inside an alignment pattern can serve as part of the clearance.
 
 Measured over 72 layouts, modules where the text overlaps a function pattern
-come out correct 61% of the time, against the ~50% that chance alone would give
-— the placement search really is exploiting the structure. Switching from the
+come out correct 61% of the time, against the ~50% that chance alone would give.
+The placement search really is exploiting the structure. Switching from the
 old rule (any uncontrollable module is a cost), together with letting the
 symbol-size search run to where it is actually useful, cut the number of
 variants with any stuck letterform from 93 in 380 to 16 in 380, and lifted the
@@ -215,15 +215,15 @@ each nudge re-solves from scratch, and directions with no room are greyed out.
 The large preview is editable. Click any module and it flips; the solver then
 re-runs and rebuilds everything else around it, so the result is still a valid
 codeword with its error correction untouched. Hand-set modules outrank the
-letterforms in the priority ladder, so a click always wins — what gives way is
+letterforms in the priority ladder, so a click always wins; what gives way is
 the plate behind it.
 
 The preview is colour-coded to show what a click can do:
 
 | | dark | light |
 | --- | --- | --- |
-| **fixed** — function patterns, and modules carrying bits of the URL itself | black | white |
-| **free** — anything the solver can move | dark grey | light grey |
+| **fixed**: function patterns, and modules carrying bits of the URL itself | black | white |
+| **free**: anything the solver can move | dark grey | light grey |
 
 Clicking a fixed module is refused rather than silently ignored. The greys are
 a guide for editing only: the gallery images and the exported PNG and SVG are
@@ -244,8 +244,8 @@ orientations raised the number of variants with a stuck letterform from 16 to
 43, and dropped worst-case plate fidelity from 95.7% to 91.5%.
 
 The reason is that the count of immovable modules is not the binding
-constraint. Reed–Solomon blocks are *independent* — a block's error-correction
-codewords are a function of that block's data and nothing else — so a target
+constraint. Reed–Solomon blocks are *independent*: a block's error-correction
+codewords are a function of that block's data and nothing else, so a target
 module can only be steered by free bits belonging to its own block. A band
 lying **along** the placement path touches few codewords and concentrates its
 demand on a handful of blocks, exhausting their freedom, even though it covers
@@ -255,8 +255,8 @@ modules predicts the outcome well, and it says an upright band wins.
 
 Quarter and half turns are therefore not searched. Half turns (0 and 180
 degrees) keep the band across the path and are genuinely competitive, but the
-difference is small and inconsistent — better on one version, worse on the
-next — and it costs a second full elimination per symbol size to find out which.
+difference is small and inconsistent (better on one version, worse on the
+next), and it costs a second full elimination per symbol size to find out which.
 The version search already covers that ground more cheaply.
 
 ## Layout
@@ -269,7 +269,7 @@ sw.js  manifest.webmanifest   offline shell (network-first)
 src/qr.js             GF(256), Reed–Solomon, version and block tables
 src/matrix.js         function patterns, placement order, masks, penalty
 src/encode.js         byte-mode payload, interleaving, module placement
-src/qart.js           the GF(2) solver — the heart of it
+src/qart.js           the GF(2) solver, the heart of it
 src/fonts.js          bitmap fonts
 src/layout.js         URL to label, wrapping, target selection
 src/generate.js       version search and mask choice
@@ -287,8 +287,8 @@ quarter of a pixel per module, so no code of any size is legible there.
 ## Deploying
 
 Published on Cloudflare Pages as `qarttext.pages.dev`. The Pages project name
-is independent of this repository's name — it is a separate field when the
-project is created — but note that **the `.pages.dev` subdomain cannot be
+is independent of this repository's name (it is a separate field when the
+project is created), but note that **the `.pages.dev` subdomain cannot be
 changed afterwards.** Renaming the project in Settings does not move it; the
 only way to a different hostname is to delete the project and create another.
 So the name has to be right at creation.
@@ -301,7 +301,7 @@ which would leave the service worker handing out assets up to ten minutes old.
 
 The same file sets a content security policy. It allows only same-origin
 scripts, styles and workers, `data:` and `blob:` images for the canvas exports,
-and nothing else — no framing, no object embeds, no base-URI rewriting. The app
+and nothing else: no framing, no object embeds, no base-URI rewriting. The app
 makes no network calls, so nothing needs relaxing.
 
 ## Installing
@@ -309,7 +309,7 @@ makes no network calls, so nothing needs relaxing.
 The page explains, in its own words rather than in the phrase "progressive web
 app", that it can be added to a home screen or dock and then works with no
 network. Chrome and Edge announce when the app genuinely qualifies, through
-`beforeinstallprompt`, and that offer is preferred to any guess — it is exact,
+`beforeinstallprompt`, and that offer is preferred to any guess: it is exact,
 and it only fires when the manifest, service worker and icons all check out.
 Everywhere else the best available is an instruction, and iOS in particular
 never prompts at all: Share, then Add to Home Screen, whichever browser you use.
@@ -327,7 +327,7 @@ Share instruction because iOS allows nothing else.
 The service worker is deliberately **network-first**, falling back to the cache
 only when offline. A cache-first worker with a background refresh shows the
 *previous* deploy on the first load after a change, and can pair fresh markup
-with a stale script — which fails in confusing ways. The footer shows the build
+with a stale script, which fails in confusing ways. The footer shows the build
 string, so it is always clear which version is actually loaded.
 
 If a browser is still holding an older, cache-first worker, it takes two
@@ -341,7 +341,7 @@ The encoder was checked against the ISO/IEC 18004 reference vectors (block
 capacities for all 40 versions, the four format-information strings, and the
 Reed–Solomon codewords for the standard test message) and round-tripped through
 an independent decoder that re-reads the rendered grid and confirms every
-Reed–Solomon syndrome is zero — that is, the symbol is not merely readable but
+Reed–Solomon syndrome is zero: the symbol is not merely readable but
 carries its full, unspent correction capacity.
 
 A sweep of 600 combinations (12 URLs × 4 correction levels × 3 fonts × 4 styles) decodes to the exact input URL with zero syndromes and zero

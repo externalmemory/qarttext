@@ -193,7 +193,7 @@ function select(r, card, keepEdits = false) {
     ['modules forced', `${s.forced} (rank ${s.rank})`],
     ['letterforms', s.inkMisses === 0 ? `all ${s.inkTotal} exact` : `${s.inkMisses} of ${s.inkTotal} stuck`],
     ['plate fidelity', `${(s.fidelity * 100).toFixed(2)}%`],
-    ['print at least', `${minPrintWidthMm(r)} mm wide (${MM_PER_MODULE} mm per module — a rule of thumb, not a spec)`],
+    ['print at least', `${minPrintWidthMm(r)} mm wide (${MM_PER_MODULE} mm per module, a rule of thumb rather than a spec)`],
   ].flatMap(([key, value]) => {
     const dt = document.createElement('dt');
     dt.textContent = key;
@@ -459,7 +459,7 @@ function setStatus(text, isError = false) {
 
 // Keep in step with BUILD in sw.js; shown in the footer so it is obvious which
 // version is loaded when something looks out of date.
-const BUILD = '2026-08-21.2';
+const BUILD = '2026-08-21.3';
 document.getElementById('build').textContent = BUILD;
 
 if ('serviceWorker' in navigator) {

@@ -25,7 +25,7 @@ export function installHint({ userAgent = '', platform = '', maxTouchPoints = 0 
   }
   if (safari) return 'In Safari: choose File, then “Add to Dock”.';
   if (firefox) {
-    return 'Firefox on the desktop cannot install web apps. Chrome, Edge and Safari can — '
+    return 'Firefox on the desktop cannot install web apps. Chrome, Edge and Safari can, '
       + 'or simply leave this tab open, since it works offline either way.';
   }
   return 'On the desktop: look for an install icon in the address bar, or “Install” in the browser menu.';

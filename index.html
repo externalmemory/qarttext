@@ -17,7 +17,7 @@
   <h1>QartText</h1>
   <p class="lede">
     The domain name, phone number or network name, written in a bitmap font inside
-    the code itself &mdash; and <strong>not</strong> at the cost of error correction. Every code here is a fully
+    the code itself, and <strong>not</strong> at the cost of error correction. Every code here is a fully
     valid QR symbol with its redundancy completely intact.
   </p>
 </header>
@@ -79,16 +79,16 @@
       <label class="field">
         <span>Error correction</span>
         <select id="ecl">
-          <option value="L">L &mdash; 7% recovery, most room for artwork</option>
-          <option value="M" selected>M &mdash; 15% recovery (default)</option>
-          <option value="Q">Q &mdash; 25% recovery</option>
-          <option value="H">H &mdash; 30% recovery, least room</option>
+          <option value="L">L: 7% recovery, most room for artwork</option>
+          <option value="M" selected>M: 15% recovery (default)</option>
+          <option value="Q">Q: 25% recovery</option>
+          <option value="H">H: 30% recovery, least room</option>
         </select>
       </label>
       <label class="field">
         <span>Maximum lines</span>
         <select id="maxLines">
-          <option value="1">1 &mdash; never wrap</option>
+          <option value="1">1: never wrap</option>
           <option value="2" selected>2</option>
           <option value="3">3</option>
         </select>
@@ -96,19 +96,19 @@
       <label class="field">
         <span>Clearance</span>
         <select id="clearance">
-          <option value="1">1 &mdash; tight</option>
-          <option value="1.5">1&frac12; &mdash; 1 clear ring, 1 stippled</option>
+          <option value="1">1: tight</option>
+          <option value="1.5">1&frac12;: 1 clear ring, 1 stippled</option>
           <option value="2" selected>2 (default)</option>
-          <option value="2.5">2&frac12; &mdash; 2 clear rings, 1 stippled</option>
+          <option value="2.5">2&frac12;: 2 clear rings, 1 stippled</option>
           <option value="3">3</option>
-          <option value="3.5">3&frac12; &mdash; 3 clear rings, 1 stippled</option>
+          <option value="3.5">3&frac12;: 3 clear rings, 1 stippled</option>
           <option value="4">4</option>
-          <option value="5">5 &mdash; generous</option>
+          <option value="5">5: generous</option>
         </select>
       </label>
       <label class="field">
         <span>Text override</span>
-        <input id="label" type="text" spellcheck="false" autocapitalize="off" placeholder="(the domain name)">
+        <input id="label" type="text" spellcheck="false" autocapitalize="off">
       </label>
     </div>
   </details>
@@ -137,9 +137,9 @@
           <span id="detailCaption"></span><br>
           <span class="key">
             <span class="key-row"><span class="chip fixed-dark"></span><span class="chip fixed-light"></span>
-              fixed &mdash; function patterns and modules carrying the payload itself</span>
+              fixed: function patterns and modules carrying the payload itself</span>
             <span class="key-row"><span class="chip free-dark"></span><span class="chip free-light"></span>
-              free &mdash; click any of these to flip it; the solver rebuilds the rest</span>
+              free: click any of these to flip it, and the solver rebuilds the rest</span>
           </span>
         </figcaption>
       </figure>
@@ -158,7 +158,7 @@
             <button type="button" data-dx="0"  data-dy="1" title="down">&#8595;</button>
             <button type="button" data-dx="1"  data-dy="1" title="down and right">&#8600;</button>
           </div>
-          <p class="hint nudge-hint">Each nudge re-solves from scratch. Watch the fidelity figure &mdash;
+          <p class="hint nudge-hint">Each nudge re-solves from scratch. Watch the fidelity figure:
             sliding the text so a full stop meets an alignment square, or a stroke meets the
             timing line, costs nothing and can gain you modules.</p>
         </div>
@@ -180,7 +180,7 @@
           <button id="dlSvg" type="button">Download SVG</button>
           <button id="clearEdits" type="button" class="ghost" hidden>Undo edits</button>
         </div>
-        <p class="hint">Exports contain only the two colours above &mdash; never the greys, which mark editable modules in the preview only.</p>
+        <p class="hint">Exports contain only the two colours above, never the greys, which mark editable modules in the preview only.</p>
       </div>
     </div>
   </section>
@@ -188,7 +188,7 @@
   <section class="install" id="install" hidden>
     <h2>Keep It On Your Device</h2>
     <p>
-      QartText needs no network once it has loaded &mdash; it does all the work in your
+      QartText needs no network once it has loaded. It does all the work in your
       browser and never sends anything anywhere. Add it to your home screen or dock and
       it opens like any other app, works with no signal at all, and drops the address bar.
     </p>
@@ -204,8 +204,8 @@
       from <em>data bits</em> to <em>module colours</em> is affine over GF(2).
     </p>
     <p>
-      The payload &mdash; a URL, a <code>tel:</code> number, a <code>WIFI:</code>
-      descriptor &mdash; occupies the first few hundred bits. Everything after the
+      The payload (a URL, a <code>tel:</code> number, a <code>WIFI:</code>
+      descriptor) occupies the first few hundred bits. Everything after the
       four-bit terminator is padding, which decoders never read, so those bits are free
       variables. Writing one column per free bit and one row per module we want to
       control gives a linear system; Gauss&ndash;Jordan elimination over GF(2) solves it.
@@ -220,7 +220,7 @@
       URL; taking them from the padding instead leaves the payload byte-for-byte intact.
     </p>
     <p>
-      Where a module carries a bit of the payload itself, it cannot be moved &mdash; those
+      Where a module carries a bit of the payload itself, it cannot be moved, and those
       few pixels come out wherever the payload puts them. The app reports the count as
       <em>fidelity</em> and picks the symbol size and position that minimise it,
       always protecting the letterforms first.
@@ -230,7 +230,7 @@
 
 <footer>
   <p>Runs entirely offline. No network calls, no dependencies, no analytics.
-     Build <span id="build">—</span>.</p>
+     Build <span id="build">&hellip;</span>.</p>
 </footer>
 
 <script type="module" src="./app.js"></script>

@@ -48,7 +48,7 @@ export function telDigits(input) {
 
 /**
  * @returns {{payload: string, label: string, warning?: string}}
- *   payload — the exact bytes to encode; label — the text to draw inside.
+ *   payload: the exact bytes to encode. label: the text to draw inside.
  */
 export function buildPayload(spec) {
   switch (spec.type) {

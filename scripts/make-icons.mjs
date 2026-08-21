@@ -57,7 +57,7 @@ function writePng(path, width, height, pixel) {
 const code = generate({ url: SITE, text: 'QR', ecl: 'M', fontId: 'pixel', styleId: 'plate', maxLines: 1 });
 if (!code) throw new Error('icon code did not generate');
 if (code.encoded !== SITE) throw new Error(`icon encodes ${code.encoded}, not ${SITE}`);
-console.log(`icon encodes ${code.encoded} — v${code.version}, ${code.size + 8} modules including quiet zone`);
+console.log(`icon encodes ${code.encoded}: v${code.version}, ${code.size + 8} modules including quiet zone`);
 const { modules, size } = code;
 
 const DARK = [16, 16, 20], LIGHT = [246, 246, 244];
@@ -136,5 +136,5 @@ console.log(`icons/icon.svg  v${code.version} ${size}x${size}`);
 <path fill="#101014" d="${runs.join('')}"/>
 </svg>
 `);
-  console.log(`icons/favicon.svg  ${side}x${side} modules — ${(16 / side).toFixed(2)} px per module at 16 px`);
+  console.log(`icons/favicon.svg  ${side}x${side} modules: ${(16 / side).toFixed(2)} px per module at 16 px`);
 }
