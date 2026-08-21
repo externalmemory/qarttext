@@ -307,3 +307,4 @@ footer p {
   padding-top: 1rem;
   margin-top: 3rem;
 }
+footer a { color: var(--accent); }
