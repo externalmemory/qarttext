@@ -53,7 +53,7 @@ The trick is that a QR code is a linear object:
 - splitting into blocks and interleaving them is a permutation;
 - the mask is a fixed XOR.
 
-Compose those and the map from **data bits** to **module colors** is affine
+Compose those and the map from *data bits* to *module colors* is affine
 over GF(2).
 
 The URL occupies the first few hundred data bits: a 4-bit mode indicator, a
@@ -67,7 +67,7 @@ then run Gauss–Jordan elimination over GF(2). The solution is a Reed–Solomon
 codeword that simultaneously spells out the URL and paints the picture.
 
 Cox bought his free bits by appending random characters to the URL's `#` fragment. Taking them from the
-padding instead leaves the URL **byte-for-byte identical** to what you typed.
+padding instead leaves the URL *byte-for-byte identical* to what you typed.
 
 ### Key Assumption
 
@@ -136,7 +136,7 @@ the gap between `r` and `g` wider than every other gap.
 Line breaks are taken after a dot or a hyphen, both of which stay at the end of
 the line where they read as deliberate.
 
-Text is drawn in **whatever case you type**. The label keeps the case of the
+Text is drawn in whatever case you type. The label keeps the case of the
 host as entered, which means the host is pulled out of the string by hand, since
 `new URL().hostname` is lower-cased by the URL specification. Nothing forces
 case anywhere: a single-case font simply has no glyph for the other case,
@@ -162,8 +162,8 @@ improvement.
 Where the text sits is a real degree of freedom, and the app searches both axes
 for the best spot rather than simply centering.
 
-The scoring rule is that **a module we cannot control only costs us when its
-fixed value disagrees with what we want.** Function patterns have known values,
+The scoring rule is that a module we cannot control only costs us when its
+fixed value disagrees with what we want. Function patterns have known values,
 so this lets the text settle where the symbol's own structure already happens to
 be right: a period landing on the dark center of an alignment pattern is
 free, a stroke crossing the dark modules of the timing line is free, and the
@@ -279,7 +279,7 @@ Share instruction because iOS allows nothing else.
 
 ## Updating
 
-The service worker is deliberately **network-first**, falling back to the cache
+The service worker is deliberately network-first, falling back to the cache
 only when offline. A cache-first worker with a background refresh shows the
 *previous* deploy on the first load after a change, and can pair fresh markup
 with a stale script, which fails in confusing ways. The footer shows the build
@@ -308,11 +308,6 @@ A further 432 combinations cover the phone and Wi-Fi payloads, and every Wi-Fi
 payload is parsed back by an independent parser to confirm the escaping
 survives: a semicolon in a password has to come out as a semicolon, not as the
 end of the field.
-
-## License
-
-MIT, see [LICENSE](LICENSE). The glyph tables in `src/fonts.js` are original
-work and covered by it too.
 
 ## Credits
 
