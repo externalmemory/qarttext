@@ -267,7 +267,8 @@ network. Chrome and Edge announce when the app genuinely qualifies, through
 `beforeinstallprompt`, and that offer is preferred to any guess: it is exact,
 and it only fires when the manifest, service worker and icons all check out.
 Everywhere else the best available is an instruction, and iOS in particular
-never prompts at all: Share, then Add to Home Screen, whichever browser you use.
+never prompts at all: the Share sheet, then Add to Home Screen, which recent
+versions of Safari bury under View More.
 
 That branch lives in `src/install.js` rather than in the page, because it cannot
 be tested through a browser. Chrome fires `beforeinstallprompt` whatever user

@@ -459,7 +459,7 @@ function setStatus(text, isError = false) {
 
 // Keep in step with BUILD in sw.js; shown in the footer so it is obvious which
 // version is loaded when something looks out of date.
-const BUILD = '2026-08-21.5';
+const BUILD = '2026-08-25.1';
 document.getElementById('build').textContent = BUILD;
 
 if ('serviceWorker' in navigator) {

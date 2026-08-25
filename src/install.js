@@ -15,8 +15,14 @@ export function installHint({ userAgent = '', platform = '', maxTouchPoints = 0 
   const safari = /Safari\//.test(ua) && !/Chrome|Chromium|Edg\/|OPR\/|SamsungBrowser/.test(ua);
 
   if (iOS) {
-    return 'On iPhone and iPad: tap the Share button, then “Add to Home Screen”. '
-      + 'iOS never offers an install prompt, so this is the only route.';
+    // The route moved: recent Safari hides the Share sheet behind the ... button,
+    // and "Add to Home Screen" sits below the fold under "View More". Naming
+    // both steps matters more than naming the button, since the button keeps
+    // changing and the buried entry is what people actually fail to find.
+    return 'On iPhone and iPad: open the Share sheet, then choose “Add to Home Screen”, '
+      + 'tapping “View More” first if it is not listed. Recent versions of Safari put the '
+      + 'Share sheet behind the ••• button in the toolbar; other browsers and older versions '
+      + 'give it its own icon. iOS never offers an install prompt, so this is the only route.';
   }
   if (android) {
     return firefox
