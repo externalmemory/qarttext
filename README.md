@@ -94,7 +94,7 @@ often costs you a larger code but buys back fidelity.
 | Control | Effect |
 | --- | --- |
 | Error correction | `L` leaves the most room for artwork, `H` the least. `M` is a good default. |
-| Maximum lines | How many lines a long domain may wrap onto. Breaks are taken after a dot or a hyphen. |
+| Maximum lines | How many lines the text may wrap onto, up to 5. Breaks are taken at a space, or after a dot or a hyphen. Two is plenty for a domain; a phrase in the override wants more. |
 | Clearance | Rings of whitespace between the letterforms and the surrounding noise. Half steps allowed. Default 2. |
 | Text override | Draw something other than the default label. |
 
@@ -133,8 +133,12 @@ letters is the *only* gap. Left in, a blank edge column inside a glyph cell
 would add a second module of space after that letter alone, which is what made
 the gap between `r` and `g` wider than every other gap.
 
-Line breaks are taken after a dot or a hyphen, both of which stay at the end of
-the line where they read as deliberate.
+Line breaks are taken at a space, or after a dot or a hyphen. A dot or a hyphen
+stays at the end of the line, where it reads as deliberate; a space is consumed
+by the break instead, since a line that begins or ends with one is just an
+indent nobody asked for. A domain name has no spaces, so this only shows up in
+the text override, which is the one place the text is a phrase rather than a
+host.
 
 Text is drawn in whatever case you type. The label keeps the case of the
 host as entered, which means the host is pulled out of the string by hand, since

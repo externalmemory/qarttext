@@ -80,33 +80,47 @@ export function normalizeUrl(input) {
  * Breaks text into at most `maxLines` lines no wider than `maxWidth` modules.
  * Falls back to hard character wrapping.
  *
- * Breaks are taken after a dot or a hyphen, both of which stay at the end of
- * the line where they read as deliberate. Hyphens matter more than they look:
- * without them a label like "constructive-calculator." is one indivisible
- * chunk, no arrangement narrower than that chunk exists at any line count, and
- * the only way to fit the text is a far larger symbol.
+ * Breaks are taken after a space, a dot or a hyphen. A dot or a hyphen stays
+ * at the end of the line, where it reads as deliberate; a space is consumed by
+ * the break instead, since a line that begins or ends with one is just an
+ * indent nobody asked for. Hyphens matter more than they look: without them a
+ * label like "constructive-calculator." is one indivisible chunk, no
+ * arrangement narrower than that chunk exists at any line count, and the only
+ * way to fit the text is a far larger symbol. Spaces matter for the override,
+ * which is the one place the text is not a domain name and may well be a
+ * phrase.
  */
 export function wrapText(font, text, maxWidth, maxLines, allowHardWrap = true) {
   if (measure(font, text) <= maxWidth) return [text];
   if (maxLines < 2) return null;
 
-  // breakable chunks: "constructive-" + "calculator." + "dimview." + "org"
+  // breakable chunks: "constructive-" + "calculator." + "dimview." + "org",
+  // or "one small " + "step for " + "man". A run of spaces belongs to the
+  // chunk it follows, so a break never starts a line with one.
   const chunks = [];
   let cur = '';
   for (const ch of text) {
+    if (ch === ' ' && cur && !cur.endsWith(' ')) { chunks.push(cur + ' '); cur = ''; continue; }
+    if (ch === ' ' && chunks.length && !cur) { chunks[chunks.length - 1] += ' '; continue; }
     cur += ch;
     if (ch === '.' || ch === '-') { chunks.push(cur); cur = ''; }
   }
   if (cur) chunks.push(cur);
 
+  // Trailing spaces are invisible but not free: they would push a line over
+  // the width for nothing, so neither the fit nor the result counts them.
+  const trim = (s) => s.replace(/ +$/, '');
+
   const packed = [];
   let line = '';
   for (const chunk of chunks) {
     const candidate = line + chunk;
-    if (line && measure(font, candidate) > maxWidth) { packed.push(line); line = chunk; }
-    else line = candidate;
+    if (trim(line) && measure(font, trim(candidate)) > maxWidth) {
+      packed.push(trim(line));
+      line = chunk.replace(/^ +/, '');
+    } else line = candidate;
   }
-  if (line) packed.push(line);
+  if (trim(line)) packed.push(trim(line));
   if (packed.length <= maxLines && packed.every(l => measure(font, l) <= maxWidth)) return packed;
 
   if (!allowHardWrap) return null;
@@ -115,10 +129,13 @@ export function wrapText(font, text, maxWidth, maxLines, allowHardWrap = true) {
   const hard = [];
   line = '';
   for (const ch of text) {
-    if (line && measure(font, line + ch) > maxWidth) { hard.push(line); line = ch; }
-    else line += ch;
+    if (!trim(line) && ch === ' ') continue;             // no line starts with a space
+    if (line && measure(font, trim(line + ch)) > maxWidth) {
+      hard.push(trim(line));
+      line = ch === ' ' ? '' : ch;
+    } else line += ch;
   }
-  if (line) hard.push(line);
+  if (trim(line)) hard.push(trim(line));
   return hard.length <= maxLines ? hard : null;
 }
 
