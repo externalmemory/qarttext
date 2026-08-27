@@ -126,6 +126,15 @@
     <div class="gallery-scroll">
       <table class="gallery" id="gallery"></table>
     </div>
+    <div class="plain-slot" id="plainSlot" hidden>
+      <h3>Without the text</h3>
+      <p class="hint">The same payload as a plain code, at the smallest symbol size that will hold
+        it and the strongest error correction that still fits in that size. Writing letterforms
+        into a code costs symbol size, and that cost is physical once the code is being cut or
+        engraved rather than printed: this one is a fraction of the area and a fraction of the
+        weeding.</p>
+      <div class="plain-card" id="plainCard"></div>
+    </div>
   </section>
 
   <section class="detail" id="detail" hidden>
@@ -181,6 +190,49 @@
           <button id="clearEdits" type="button" class="ghost" hidden>Undo edits</button>
         </div>
         <p class="hint">Exports contain only the two colors above, never the grays, which mark editable modules in the preview only.</p>
+        <details class="options cutting" id="cutting">
+          <summary>Cutting: vinyl, laser, plotter</summary>
+          <p class="hint">The PNG and SVG above are filled artwork. A blade needs outlines instead,
+            or every shared edge between two dark modules becomes a cut straight through solid
+            material. These two write the boundary of each region and nothing else.</p>
+          <div class="field">
+            <span>Module size <output id="cutMmOut">3</output> mm</span>
+            <input id="cutMm" type="range" min="1" max="8" step="0.5" value="3">
+          </div>
+          <div class="field">
+            <span>Corner radius <output id="cutRadiusOut">0.33</output> modules</span>
+            <input id="cutRadius" type="range" min="0" max="0.5" step="0.01" value="0.33">
+          </div>
+          <p class="hint">Rounding the corners also joins modules that touch corner to corner.
+            Without it they meet at a single point, which a blade cannot cut and which leaves them
+            as loose chips. Set the radius from the narrowest strip of material that survives
+            weeding, not from how the corners look.</p>
+          <label class="field">
+            <span>Join corners</span>
+            <select id="cutBridge">
+              <option value="minimal" selected>where needed, fewest picks</option>
+              <option value="all">everywhere, most redundant</option>
+            </select>
+          </label>
+          <p class="hint">Only one color can win a corner: joining one diagonal severs the
+            other. Joining only where the artwork would otherwise fall apart hands every
+            remaining corner to the background, which reaches the fewest pieces to keep and
+            the fewest to weed at once. Corners inside the text are exempt and always go to
+            the color the letters are drawn in, because a bitmap font joins strokes
+            diagonally on purpose and dropping one turns an <em>o</em> into a <em>c</em>.</p>
+          <label class="check">
+            <input id="cutSquareFinders" type="checkbox">
+            Keep the three finder patterns square
+          </label>
+          <dl class="stats" id="cutStats"></dl>
+          <div class="downloads">
+            <button id="dlDxf" type="button">Download DXF</button>
+            <button id="dlCutSvg" type="button">Download cut SVG</button>
+          </div>
+          <p class="hint">DXF carries no units of its own and importers disagree about what one
+            unit means, so the intended width is in the file name as well. Where your software
+            reads SVG, prefer it: the size comes out right without asking.</p>
+        </details>
       </div>
     </div>
   </section>

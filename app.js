@@ -1,6 +1,9 @@
 import { FONTS, FONT_BY_ID } from './src/fonts.js';
 import { STYLES, STYLE_BY_ID } from './src/layout.js';
 import { buildPayload } from './src/payload.js';
+import { bestPlainCode } from './src/plain.js';
+import { outlines, cutCounts, bridgeWaist } from './src/contour.js';
+import { toDXF, toCutSVG, widthMm } from './src/cut.js';
 import { installHint, isInstalled } from './src/install.js';
 import { toSVG, drawToCanvas, drawEditable, moduleAt, scaleFor, svgBlob, canvasToPngBlob, filenameFor, minPrintWidthMm, MM_PER_MODULE, DEFAULT_QUIET } from './src/render.js';
 
@@ -17,6 +20,11 @@ const els = {
   bigCanvas: $('bigCanvas'), stats: $('stats'),
   scale: $('scale'), scaleOut: $('scaleOut'), dark: $('dark'), light: $('light'),
   contrastWarn: $('contrastWarn'), dlPng: $('dlPng'), dlSvg: $('dlSvg'),
+  plainSlot: $('plainSlot'), plainCard: $('plainCard'),
+  cutMm: $('cutMm'), cutMmOut: $('cutMmOut'), cutRadius: $('cutRadius'),
+  cutRadiusOut: $('cutRadiusOut'), cutSquareFinders: $('cutSquareFinders'),
+  cutStats: $('cutStats'), dlDxf: $('dlDxf'), dlCutSvg: $('dlCutSvg'),
+  cutBridge: $('cutBridge'),
 };
 
 let selected = null;
@@ -134,6 +142,7 @@ function buildTable() {
 }
 
 function variantName(r) {
+  if (r.plain) return 'Plain, no text';
   const font = FONT_BY_ID[r.fontId], style = STYLE_BY_ID[r.styleId];
   return `${style?.name ?? r.styleId} · ${font?.name ?? r.fontId}`;
 }
@@ -155,10 +164,21 @@ function makeCard(r) {
   const canvas = document.createElement('canvas');
   drawToCanvas(r, canvas, { scale: scaleFor(r.size, 320), quiet: DEFAULT_QUIET, ...colors() });
 
-  const perfect = r.stats.inkMisses === 0;
   const meta = document.createElement('div');
   meta.className = 'meta';
-  meta.innerHTML = `v${r.version}-${r.ecl} &middot; ${r.size}&times;${r.size} &middot; &ge;${minPrintWidthMm(r)}&thinsp;mm<br>`
+  const head = `v${r.version}-${r.ecl} &middot; ${r.size}&times;${r.size} &middot; &ge;${minPrintWidthMm(r)}&thinsp;mm<br>`;
+  if (r.plain) {
+    const { keep, weed } = cutCounts(r.modules, r.size, { quiet: DEFAULT_QUIET });
+    meta.innerHTML = head + `<span class="badge">smallest that fits</span><br>`
+      + `${keep} pieces, ${weed} to weed`;
+    card.append(canvas, meta);
+    card.setAttribute('aria-label',
+      `Plain code with no text, version ${r.version} level ${r.ecl}, ${r.size} by ${r.size} modules`);
+    card.addEventListener('click', () => select(r, card));
+    return card;
+  }
+  const perfect = r.stats.inkMisses === 0;
+  meta.innerHTML = head
     + `<span class="badge${perfect ? '' : ' imperfect'}">`
     + (perfect ? 'letterforms exact' : `${r.stats.inkMisses} stuck in text`)
     + `</span> &middot; ${(r.stats.fidelity * 100).toFixed(1)}% plate`
@@ -184,9 +204,13 @@ function select(r, card, keepEdits = false) {
   redrawBig();
 
   const s = r.stats;
-  // Built as nodes rather than markup: the label comes from whatever was typed
-  // in, and interpolating that into innerHTML would make it executable.
-  els.stats.replaceChildren(...[
+  const rows = r.plain ? [
+    ['symbol', `version ${r.version}, level ${r.ecl}, ${r.size}×${r.size}, mask ${r.mask}`],
+    ['payload', `${s.payloadCodewords} of ${s.dataCodewords} data codewords`],
+    ['padding', `${s.padCodewords} codewords of 0xEC and 0x11`],
+    ['error correction', `${s.ecCodewords} codewords in ${s.blocks} block${s.blocks === 1 ? '' : 's'}`],
+    ['print at least', `${minPrintWidthMm(r)} mm wide (${MM_PER_MODULE} mm per module, a rule of thumb rather than a spec)`],
+  ] : [
     ['symbol', `version ${r.version}, level ${r.ecl}, ${r.size}×${r.size}, mask ${r.mask}`],
     ['text', r.lines.map(l => `“${l}”`).join(' / ')],
     ['free bits', `${s.freeBits} of ${s.dataCodewords * 8} data bits`],
@@ -194,7 +218,10 @@ function select(r, card, keepEdits = false) {
     ['letterforms', s.inkMisses === 0 ? `all ${s.inkTotal} exact` : `${s.inkMisses} of ${s.inkTotal} stuck`],
     ['plate fidelity', `${(s.fidelity * 100).toFixed(2)}%`],
     ['print at least', `${minPrintWidthMm(r)} mm wide (${MM_PER_MODULE} mm per module, a rule of thumb rather than a spec)`],
-  ].flatMap(([key, value]) => {
+  ];
+  // Built as nodes rather than markup: the label comes from whatever was typed
+  // in, and interpolating that into innerHTML would make it executable.
+  els.stats.replaceChildren(...rows.flatMap(([key, value]) => {
     const dt = document.createElement('dt');
     dt.textContent = key;
     const dd = document.createElement('dd');
@@ -205,8 +232,11 @@ function select(r, card, keepEdits = false) {
   els.offsetOut.textContent = r.offset
     ? `x ${r.offset.x} of ${r.bounds.maxX}, y ${r.offset.y} of ${r.bounds.maxY}`
     : '';
-  setNudgeEnabled(true);
-  showEditState();
+  setNudgeEnabled(!r.plain);
+  showEditState(r.plain
+    ? 'A plain code has no spare bits, so there is nothing here to move.'
+    : null);
+  updateCutStats();
 }
 
 // ------------------------------------------------------------------ editing
@@ -224,7 +254,9 @@ els.bigCanvas.addEventListener('click', (event) => {
   const index = moduleAt(selected, els.bigCanvas, event.clientX, event.clientY);
   if (index === null) return;
   if (!selected.editable?.[index]) {
-    showEditState('That module is fixed: it is a function pattern, or it carries a bit of the URL.');
+    showEditState(selected.plain
+      ? 'A plain code has no spare bits: every module is payload, padding, or error correction.'
+      : 'That module is fixed: it is a function pattern, or it carries a bit of the URL.');
     return;
   }
   // Flipping one module means re-solving; the rest of the code moves with it.
@@ -288,9 +320,9 @@ function replace(extra) {
       }
     }
     select(msg.result, undefined, true);
-    // Report any click the solver could not honour rather than silently losing it.
+    // Report any click the solver could not honor rather than silently losing it.
     const ignored = [...overrides].filter(([i, v]) => msg.result.modules[i] !== v).length;
-    showEditState(ignored ? `${overrides.size} set by hand, ${ignored} could not be honoured.` : null);
+    showEditState(ignored ? `${overrides.size} set by hand, ${ignored} could not be honored.` : null);
   });
 }
 
@@ -351,6 +383,100 @@ els.dlPng.addEventListener('click', async () => {
   saveBlob(await canvasToPngBlob(canvas), `${filenameFor(selected)}.png`);
 });
 
+// ----------------------------------------------------------------- cutting
+
+/**
+ * Corners inside the text go to whichever color the letters are drawn in.
+ *
+ * A bitmap font joins strokes diagonally on purpose, and dropping one of those
+ * joins to save a piece turns an o into a c. Outside the text there is nothing
+ * to read, so those corners are free to be spent on handling instead.
+ */
+function protectedText() {
+  if (!selected || selected.plain || !selected.rect) return null;
+  const style = STYLE_BY_ID[selected.styleId];
+  return { rect: selected.rect, color: style?.invert ? 0 : 1 };
+}
+
+function bridgeMode() {
+  return Number(els.cutRadius.value) > 0 ? els.cutBridge.value : 'none';
+}
+
+/** What the current settings will actually produce, in millimeters and pieces. */
+function updateCutStats() {
+  const moduleMm = Number(els.cutMm.value);
+  const radius = Number(els.cutRadius.value);
+  els.cutMmOut.textContent = moduleMm.toFixed(1);
+  els.cutRadiusOut.textContent = radius.toFixed(2);
+  els.cutBridge.disabled = radius === 0;
+  if (!selected) return;
+
+  const across = widthMm(selected.size, moduleMm, DEFAULT_QUIET);
+  const waist = bridgeWaist(radius) * moduleMm;
+  const { keep, weed } = cutCounts(selected.modules, selected.size, {
+    quiet: DEFAULT_QUIET, bridge: bridgeMode(), protect: protectedText(),
+  });
+  // Below roughly half a millimeter a strip of sign vinyl stretches or tears
+  // as it is weeded and transferred. That is a rule of thumb about material,
+  // not a property of the geometry, so it is worded as one.
+  const thin = radius > 0 && waist < 0.5;
+  els.cutStats.replaceChildren(...[
+    ['finished size', `${across.toFixed(0)} × ${across.toFixed(0)} mm, quiet zone included`],
+    ['bridges', radius > 0
+      ? `${waist.toFixed(2)} mm wide${thin ? ', thin enough to tear' : ''}`
+      : 'none: square corners cut both colors apart at the point'],
+    ['pieces to keep', String(keep)],
+    ['pieces to weed', String(weed)],
+  ].flatMap(([key, value]) => {
+    const dt = document.createElement('dt');
+    dt.textContent = key;
+    const dd = document.createElement('dd');
+    dd.textContent = value;
+    if (key === 'bridges' && thin) dd.style.color = 'var(--warn)';
+    return [dt, dd];
+  }));
+}
+
+function cutGeometry() {
+  const moduleMm = Number(els.cutMm.value);
+  const total = selected.size + DEFAULT_QUIET * 2;
+  const loops = outlines(selected.modules, selected.size, {
+    quiet: DEFAULT_QUIET,
+    radius: Number(els.cutRadius.value),
+    bridge: bridgeMode(),
+    protect: protectedText(),
+    squareFinders: els.cutSquareFinders.checked,
+  });
+  return { loops, moduleMm, total, across: widthMm(selected.size, moduleMm, DEFAULT_QUIET) };
+}
+
+/** The intended width goes in the name, because a DXF cannot carry it. */
+function cutFilename(extension, moduleMm, across) {
+  return `${filenameFor(selected)}-${moduleMm}mm-${across.toFixed(0)}mm.${extension}`;
+}
+
+for (const control of [els.cutMm, els.cutRadius, els.cutSquareFinders, els.cutBridge]) {
+  control.addEventListener('input', updateCutStats);
+}
+
+els.dlDxf.addEventListener('click', () => {
+  if (!selected) return;
+  const { loops, moduleMm, total, across } = cutGeometry();
+  const blob = new Blob([toDXF(loops, { moduleMm, total })], { type: 'application/dxf' });
+  saveBlob(blob, cutFilename('dxf', moduleMm, across));
+});
+
+els.dlCutSvg.addEventListener('click', () => {
+  if (!selected) return;
+  const { loops, moduleMm, total, across } = cutGeometry();
+  const svg = toCutSVG(loops, { moduleMm, total, title: `Cutting path for ${selected.encoded}` });
+  saveBlob(svgBlob(svg), cutFilename('cut.svg', moduleMm, across));
+});
+
+updateCutStats();
+
+// -------------------------------------------------------------- other output
+
 els.scale.addEventListener('input', redrawBig);
 els.dark.addEventListener('input', () => { redrawBig(); repaintGallery(); });
 els.light.addEventListener('input', () => { redrawBig(); repaintGallery(); });
@@ -381,6 +507,7 @@ function run() {
   overrides.clear();
   els.galleryWrap.hidden = false;
   els.detail.hidden = true;
+  showPlain(opts);
   selected = null;
   selectedCard = null;
   setStatus('Solving…');
@@ -405,6 +532,24 @@ function run() {
         : 'Nothing fits. Try a lower error-correction level, more lines, or less clearance.', !fitted);
     }
   });
+}
+
+// The plain code takes microseconds: no solve, just the smallest symbol that
+// fits. It is built here rather than in the worker so it is on screen before
+// the first variant arrives.
+function showPlain(opts) {
+  let code = null;
+  try {
+    code = bestPlainCode(opts);
+  } catch {
+    code = null;
+  }
+  els.plainSlot.hidden = !code;
+  if (!code) { els.plainCard.replaceChildren(); return; }
+  const card = makeCard(code);
+  const canvas = card.querySelector('canvas');
+  if (canvas) painted.set(canvas, code);
+  els.plainCard.replaceChildren(card);
 }
 
 function setStatus(text, isError = false) {
@@ -459,7 +604,7 @@ function setStatus(text, isError = false) {
 
 // Keep in step with BUILD in sw.js; shown in the footer so it is obvious which
 // version is loaded when something looks out of date.
-const BUILD = '2026-08-25.1';
+const BUILD = '2026-08-27.1';
 document.getElementById('build').textContent = BUILD;
 
 if ('serviceWorker' in navigator) {

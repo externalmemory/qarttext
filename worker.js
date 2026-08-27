@@ -13,6 +13,8 @@ function pack(r) {
     encoded: r.encoded, label: r.label, lines: r.lines,
     fontId: r.fontId, styleId: r.styleId, hardWrapped: r.hardWrapped,
     clearance: r.clearance, offset: r.offset, bounds: r.bounds, editable: r.editable,
+    // the text box: the cut output needs it to know which corners are letterform
+    rect: r.rect, plain: r.plain,
     stats: r.stats,
   };
 }

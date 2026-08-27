@@ -308,3 +308,16 @@ footer p {
   margin-top: 3rem;
 }
 footer a { color: var(--accent); }
+
+/* The plain code sits outside the grid: it has neither a font nor a style, so
+   a row of three identical cards would say nothing the one card does not. */
+.plain-slot { margin-top: 1.75rem; padding-top: 1.25rem; border-top: 1px solid var(--line); }
+.plain-slot h3 { margin-bottom: 0.35rem; }
+.plain-card { display: flex; }
+.plain-card .card { flex: 0 0 18rem; max-width: 100%; }
+
+.cutting { margin-top: 0.25rem; }
+.cutting .field { margin-bottom: 0.75rem; }
+.cutting .stats { margin: 0.5rem 0 0.9rem; }
+.cutting .check { margin-bottom: 0.5rem; }
+.cutting .hint:last-child { margin-bottom: 0; }

@@ -244,6 +244,112 @@ this codebase and verified to decode to `https://qarttext.pages.dev/`. The
 favicon is separate and is letterforms only: at 16 px a QR code gets about a
 quarter of a pixel per module, so no code of any size is legible there.
 
+## Cutting
+
+Everything above is drawn for ink. A vinyl cutter, laser, or plotter needs
+something different, and the difference is not the file format.
+
+The PNG and SVG exports merge dark modules into horizontal runs and fill them.
+Under a fill rule the shared edges vanish; under a blade they do not. Handed to
+a cutter, that geometry puts a real cut through the middle of every solid
+region. So the cut output is traced separately: `src/contour.js` walks the
+boundary of each connected dark region and emits it as one closed loop, with a
+second loop for each enclosed light region. A finder pattern comes out as three
+nested loops, an outer ring and its core, which is exactly right.
+
+Two modules that touch only at a corner are the interesting case. Cutting
+through that single point is not something a blade can do, and the two modules
+come away as separate chips. Rounding the corners fixes it: the two concave
+fillets that meet at such a corner leave a waist of
+
+    2r(√2 − 1) ≈ 0.828r
+
+joining the modules, where `r` is the radius in modules. That is the number to
+size a cut from. At the default `r` of one third of a module, 3 mm modules give
+a 0.83 mm bridge; 2 mm modules give 0.55 mm, which is about where sign vinyl
+starts to stretch as it is weeded. Set the radius from the narrowest strip of
+material that survives handling, not from how the corners look. The rounding
+also relieves the sharp interior corners where vinyl tears and a blade
+overshoots.
+
+Rounding is safe for scanning because decoders sample at module centers. At
+`r = 1/3` an isolated module keeps 90.5% of its area and a bridge adds about
+2.4% to the corner of each light module it touches, none of it near a center.
+The finder patterns can be left square from the same panel for anyone who would
+rather not round the one structure a decoder looks for first.
+
+### Which Color Wins a Corner
+
+Only one can. The four cells are shared, so joining one diagonal necessarily
+severs the other, and every corner is a choice between them.
+
+Giving them all to the dark is the obvious move and the wrong one. It reaches
+the fewest pieces to keep, but it walls off every light region it encircles, so
+weeding goes up by an order of magnitude, and in the inverted styles it takes
+the letterforms apart: a light stroke drawn with a diagonal join is severed at
+that join, and a `Q` becomes a scatter of disconnected blobs.
+
+Giving them all to the light is the mirror image: the fewest picks, the most
+loose pieces.
+
+Neither is necessary, because the dark and light connections across a corner
+are planar duals. A corner is redundant for the dark exactly when it is
+essential for the light. Spend the dark's corners on a spanning forest, keeping
+only the ones without which the artwork would fall apart, and the light is left
+with a spanning forest too. Across 364 codes that reaches the same number of
+pieces to keep as giving everything to the dark **and** the same number of
+picks as giving everything to the light. There is no trade-off to make.
+
+| policy | pieces to keep | picks to weed |
+| --- | --- | --- |
+| dark wins everywhere | 70 | 357 |
+| light wins everywhere | 357 | 40 |
+| dark wins only where it must | **70** | **40** |
+
+The one place it must not be applied is the text. A spanning forest of a closed
+ring leaves exactly one corner over, so the ring of an `o` loses a quarter of
+itself and reads as a `c`, `u` or `n` depending on which corner went. In a
+bitmap font a diagonal contact is a deliberate stroke join, not an artifact to
+be optimized away. So every corner inside the text box goes to whichever color
+the letters are drawn in, and the counter of an `o` is allowed to become an
+island. Across the three fonts that is 80 closed glyphs in both polarities; 76
+of them lose a counter without the exemption. One island per counter is a cheap
+price, and it is symmetric: the upright styles pay it in picks and the inverted
+styles in pieces, five to nine either way.
+
+Bridging is still worth separating from weeding, because they are not the same
+saving. Joining two dark modules at a corner necessarily severs the two light
+ones, so a policy that maximizes one does not automatically help the other.
+That is exactly why the corner budget is worth spending carefully.
+
+| Output | Notes |
+| --- | --- |
+| DXF | R12 ASCII, closed `POLYLINE` entities on a `CUT` layer. R12 rather than the smaller `LWPOLYLINE`, because importers on cutting software are old and narrow. |
+| Cut SVG | The same loops as unfilled strokes at true size in millimeters. |
+
+Arcs are written as chords, six per quarter turn. The sagitta error is
+`r(1 − cos 7.5°) ≈ 0.0086r`, about 9 µm at a 1 mm radius, well under any
+cutter's positioning resolution, and it avoids depending on whether an importer
+honors DXF bulge values. DXF carries no units of its own and importers
+disagree about what one unit means, so the intended width is repeated in the
+file name. Where the software reads SVG, prefer it.
+
+## Without the Text
+
+Alongside the twelve variants there is one plain code: no text, no solving,
+the smallest symbol that will hold the payload, and the strongest error
+correction that still fits in that size. Levels do not map one to one onto
+versions, so a payload that needs version 3 at level M often still needs
+version 3 at level Q, and the extra redundancy is free.
+
+It exists because the trade this tool makes is expensive in physical terms.
+Steering letterforms needs free bits, free bits mean symbol size, and
+`https://qarttext.pages.dev/` lands at version 15 to 20 with the text against
+version 2 without it. That is roughly nine and a half times the module count,
+which prints for the same cost and cuts for about ten times the work. At 3 mm
+modules the plain code is 99 mm square with 25 pieces to weed; the smallest
+variant with text is 255 mm square with 357.
+
 ## Deploying
 
 Published on Cloudflare Pages as `qarttext.pages.dev`.
@@ -309,6 +415,32 @@ A further 432 combinations cover the phone and Wi-Fi payloads, and every Wi-Fi
 payload is parsed back by an independent parser to confirm the escaping
 survives: a semicolon in a password has to come out as a semicolon, not as the
 end of the field.
+
+The plain encoder is compared module for module against `python-qrcode`, an
+implementation of a wholly separate lineage: 320 grids, ten payloads by four
+correction levels by all eight masks, identical in every module. (`segno`, a
+third implementation, inserts an extra zero pad codeword when the terminator
+lands on a byte boundary. It still decodes, since a reader stops at the
+terminator, but it is not what ISO/IEC 18004 §8.4.9 describes and not what
+`python-qrcode` produces.)
+
+Closed letterforms are checked by rasterizing every glyph that has a counter,
+in both polarities, and counting the background regions: opening a ring at one
+point leaves the ink connected, so the thing to measure is whether the counter
+is still walled off. All 80 cases keep every counter, and 76 of the same 80
+lose one when the exemption is removed.
+
+The cut geometry is verified by going all the way back to a scan rather than by
+inspecting coordinates. Traced outlines are rasterized and compared to the grid
+they came from, pixel for pixel at 8×, for every variant. Rounded outlines are
+checked to leave every module center unchanged at three radii. The bridge waist
+is measured off a rendered saddle and agrees with `2r(√2 − 1)` to within 0.002
+modules. And the DXF is read back by a separate parser, its coordinates
+un-transformed independently of the writer, rasterized and decoded: a mirrored
+symbol survives a coordinate round trip but not a decoder, which is the point
+of scanning it. Fifty-two rasterized outlines, thirteen codes by four corner
+treatments, decode to the exact payload, across all three corner policies and
+both radii.
 
 ## Credits
 
