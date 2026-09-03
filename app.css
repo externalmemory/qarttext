@@ -153,6 +153,9 @@ button.ghost { background: transparent; color: var(--ink); border-color: var(--l
 /* ----------------------------------------------------------------- gallery */
 
 .hint { color: var(--dim); font-size: 0.875rem; margin: 0 0 1rem; }
+/* A hint reporting a flip that costs more than error correction absorbs. Color
+   only, so the line does not resize as the reader clicks. */
+.hint.costly { color: var(--warn); }
 
 /* Fonts across, extent and inversion down. */
 .gallery-scroll { overflow-x: auto; }
@@ -258,6 +261,9 @@ table.gallery td {
 .chip.fixed-light { background: #fff; }
 .chip.free-dark { background: #6b6b6b; }
 .chip.free-light { background: #d6d6d6; }
+/* The same two literals as FLIP_DARK and FLIP_LIGHT in src/render.js. */
+.chip.flip-dark { background: #c2410c; }
+.chip.flip-light { background: #fdba74; }
 .preview figcaption {
   font-family: var(--mono);
   font-size: 0.72rem;

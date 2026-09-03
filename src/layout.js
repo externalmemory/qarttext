@@ -31,11 +31,6 @@ const W_PLATE = 1;    // plate area beyond the clearance
 // rather than a random scatter, so the edge reads as texture instead of damage.
 const BAYER4 = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
 const ditherAt = (r, c) => BAYER4[(r & 3) * 4 + (c & 3)] / 16;
-const W_PINNED = 5000; // a module the reader has clicked; outranks everything
-
-/** Weight marking a hand-set module, so it survives when freedom runs short. */
-export const OVERRIDE_WEIGHT = W_PINNED;
-
 /** Weight marking a letterform module, so callers can count them. */
 export const INK_WEIGHT = W_INK;
 

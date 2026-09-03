@@ -178,21 +178,54 @@ each nudge re-solves from scratch, and directions with no room are grayed out.
 
 ## Manual Editing
 
-The large preview is editable. Click any module and it flips; the solver then
-re-runs and rebuilds everything else around it, so the result is still a valid
-Reed–Solomon codeword with its error correction untouched. Hand-set modules
-outrank the letterforms in the priority ladder, so a click always wins; what
-gives way is the plate behind it.
+The large preview is editable. Click any module and it flips; click it again and
+it goes back. Nothing is re-solved, and no module is off limits.
 
-The preview is color-coded to show what a click can do:
+That is a deliberate reversal of the obvious design. The solver could be re-run
+around each click, and it was, so that the result stayed a perfectly valid
+Reed–Solomon codeword. But re-solving pays for the click by moving the rest of
+the picture, and it cannot honor a click on a module the solver does not own.
+That is exactly the click you want to make, since the modules that ruin a
+letterform are precisely the ones nothing could move. Painting the flip on top
+honors every click. The cost is that the codeword carrying that module no
+longer agrees with its check bytes, so the reader's decoder has to repair it.
+
+That is what error correction is for, and there is a budget. It is not counted
+in modules: a codeword is eight modules, so eight flips inside one codeword cost
+exactly what one flip costs. Blocks are independent, and a block with `ec`
+error-correction codewords repairs `floor(ec / 2)` damaged codewords of its own
+and no more, so what decides whether the code still reads is the worst single
+block rather than the total. The panel under the preview reports it that way:
+
+```
+3 modules flipped by hand, 2 of 8 correctable codewords spent in the worst block.
+```
+
+Two kinds of module sit outside that accounting, and the panel names them. A
+handful of modules at the end of the data region are remainder bits that no
+codeword reaches; flipping one is free, because nothing reads it. A function
+pattern is the opposite: a finder, the timing line or an alignment square is how
+a reader locates and squares up the grid before any decoding happens, so damage
+there is not repaired, only survived, and how much of it a given scanner
+tolerates is not something the standard promises. Those clicks are allowed,
+since a letterform stroke landing on an alignment square is a real thing that
+happens, and the line turns red when you make one.
+
+The preview is color-coded:
 
 | | dark | light |
 | --- | --- | --- |
 | **fixed**: function patterns, and modules carrying bits of the URL itself | black | white |
 | **free**: anything the solver can move | dark gray | light gray |
+| **flipped by hand** | orange | pale orange |
 
-The grays are a guide for editing only: the gallery images and the exported PNG
-and SVG are strictly black and white.
+The grays and the orange are a guide for editing only: the gallery images and
+the exported PNG, SVG, DXF and cutting path are strictly the two chosen colors,
+and all of them carry the flips.
+
+Any re-solve discards the flips: nudging the text, auto-placing it, or
+generating again. A flip is a position on one particular grid, and re-solving
+builds a different one underneath it.
 
 ### No Rotation
 

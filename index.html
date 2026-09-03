@@ -150,7 +150,9 @@
             <span class="key-row"><span class="chip fixed-dark"></span><span class="chip fixed-light"></span>
               fixed: function patterns and modules carrying the payload itself</span>
             <span class="key-row"><span class="chip free-dark"></span><span class="chip free-light"></span>
-              free: click any of these to flip it, and the solver rebuilds the rest</span>
+              free: modules the solver can still move</span>
+            <span class="key-row"><span class="chip flip-dark"></span><span class="chip flip-light"></span>
+              flipped by hand: click any module to flip it, click it again to put it back</span>
           </span>
         </figcaption>
       </figure>
@@ -169,7 +171,8 @@
             <button type="button" data-dx="0"  data-dy="1" title="down">&#8595;</button>
             <button type="button" data-dx="1"  data-dy="1" title="down and right">&#8600;</button>
           </div>
-          <p class="hint nudge-hint">Each nudge re-solves from scratch. Watch the fidelity figure:
+          <p class="hint nudge-hint">Each nudge re-solves from scratch, which discards any modules you
+            flipped by hand. Watch the fidelity figure:
             sliding the text so a period meets an alignment square, or a stroke meets the
             timing line, costs nothing and can gain you modules.</p>
         </div>
@@ -191,7 +194,8 @@
           <button id="dlSvg" type="button">Download SVG</button>
           <button id="clearEdits" type="button" class="ghost" hidden>Undo edits</button>
         </div>
-        <p class="hint">Exports contain only the two colors above, never the grays, which mark editable modules in the preview only.</p>
+        <p class="hint">Exports contain only the two colors above. The grays and the orange are preview
+          markings: the grays say the solver could still move a module, the orange says you moved it yourself.</p>
         <details class="options cutting" id="cutting">
           <summary>Cutting: vinyl, laser, plotter</summary>
           <p class="hint">The PNG and SVG above are filled artwork. A blade needs outlines instead,

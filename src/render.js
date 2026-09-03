@@ -50,15 +50,29 @@ function mix(a, b, t) {
   return `rgb(${c(ar, br)},${c(ag, bg)},${c(ab, bb)})`;
 }
 
+// Hand-flipped modules. Fixed rather than derived from the chosen pair: the
+// grays already say "the solver may move this", and a flip is a different
+// statement -- "the reader overruled the solver here" -- so it wants a color
+// that no amount of recoloring can turn back into a shade of the other four.
+// The legend chips in app.css repeat these two literals.
+export const FLIP_DARK = '#c2410c';
+export const FLIP_LIGHT = '#fdba74';
+
 /**
  * Preview used for editing. Modules that cannot be changed -- function
  * patterns, and modules carrying bits of the URL itself -- are drawn in full
  * black and white; everything the solver is free to move is drawn in muted
  * grays derived from the same pair, so the two readings stay comparable.
  * Exported PNG and SVG are always plain black and white.
+ *
+ * `flips` is the reader's own overrides, module index -> value. They are drawn
+ * in their own pair of colors and at their own value, since that value is what
+ * the export will carry: the flip is applied to the picture, not proposed to
+ * the solver.
  */
 export function drawEditable(result, canvas, {
   scale = 8, quiet = DEFAULT_QUIET, dark = '#000000', light = '#ffffff',
+  flips = null, flipDark = FLIP_DARK, flipLight = FLIP_LIGHT,
 } = {}) {
   const { modules, size, editable } = result;
   const total = size + quiet * 2;
@@ -74,6 +88,11 @@ export function drawEditable(result, canvas, {
   for (let r = 0; r < size; r++) {
     for (let c = 0; c < size; c++) {
       const i = r * size + c;
+      if (flips && flips.has(i)) {
+        ctx.fillStyle = flips.get(i) === 1 ? flipDark : flipLight;
+        ctx.fillRect((c + quiet) * scale, (r + quiet) * scale, scale, scale);
+        continue;
+      }
       const on = modules[i] === 1;
       const free = editable && editable[i] === 1;
       if (!on && !free) continue; // fixed light: the background already

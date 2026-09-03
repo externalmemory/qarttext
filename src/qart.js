@@ -78,6 +78,49 @@ export function pinnedModuleMap(version, ecl, byteLength) {
 }
 
 /**
+ * Where each module lands in the error-correction structure: a function that
+ * answers, for a module index, which codeword of which block carries it.
+ *
+ * This is what prices a hand flip. Flipping a module without re-solving leaves
+ * the codeword stream disagreeing with its Reed-Solomon check bytes, which is
+ * exactly what error correction is for -- but the budget is finite and it is
+ * counted in codewords, not modules. Eight flips inside one codeword cost what
+ * one flip costs; a block repairs floor(ec / 2) damaged codewords and no more,
+ * and blocks are independent, so what decides whether the code still reads is
+ * the worst single block rather than the total.
+ *
+ * Two kinds of module fall outside that accounting. A function pattern carries
+ * no codeword at all: a finder, the timing line or an alignment square is how
+ * the reader finds and squares up the grid in the first place, so damage there
+ * is not repaired, it is simply damage. At the other end, the last few modules
+ * of the data region are remainder bits that no codeword reaches; flipping one
+ * of those is free, because nothing ever reads it.
+ */
+export function damageMap(version, ecl) {
+  const layout = blockLayout(version, ecl);
+  const skeleton = new Skeleton(version, ecl);
+  const { dataToStream, ecToStream } = streamIndexMaps(layout);
+
+  const streamToBlock = new Int32Array(layout.rawCodewords).fill(-1);
+  for (let j = 0; j < layout.numBlocks; j++) {
+    const b = layout.blocks[j];
+    for (let i = 0; i < b.length; i++) streamToBlock[dataToStream[b.offset + i]] = j;
+    for (let i = 0; i < layout.ecPerBlock; i++) streamToBlock[ecToStream[j][i]] = j;
+  }
+
+  const at = (index) => {
+    const bit = skeleton.bitAt[index];
+    if (bit < 0) return { kind: 'function' };
+    const codeword = bit >> 3;
+    if (codeword >= layout.rawCodewords) return { kind: 'unused' };
+    return { kind: 'data', codeword, block: streamToBlock[codeword] };
+  };
+  at.layout = layout;
+  at.correctable = layout.ecPerBlock >> 1; // codewords per block
+  return at;
+}
+
+/**
  * @param {object} opts
  * @param {number} opts.version
  * @param {string} opts.ecl

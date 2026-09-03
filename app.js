@@ -6,6 +6,7 @@ import { outlines, cutCounts, bridgeWaist } from './src/contour.js';
 import { toDXF, toCutSVG, widthMm } from './src/cut.js';
 import { installHint, isInstalled } from './src/install.js';
 import { toSVG, drawToCanvas, drawEditable, moduleAt, scaleFor, svgBlob, canvasToPngBlob, filenameFor, minPrintWidthMm, MM_PER_MODULE, DEFAULT_QUIET } from './src/render.js';
+import { damageMap } from './src/qart.js';
 
 const $ = (id) => document.getElementById(id);
 const els = {
@@ -30,7 +31,7 @@ const els = {
 let selected = null;
 let selectedCard = null;
 let token = 0;
-/** Modules the reader has flipped by hand: module index -> wanted value. */
+/** Modules the reader has flipped by hand: module index -> the value shown. */
 const overrides = new Map();
 const cells = new Map();
 
@@ -191,8 +192,8 @@ function makeCard(r) {
   return card;
 }
 
-function select(r, card, keepEdits = false) {
-  if (!keepEdits && (!selected || selected.id !== r.id || selected.size !== r.size)) overrides.clear();
+function select(r, card) {
+  if (!selected || selected.id !== r.id || selected.size !== r.size) overrides.clear();
   selected = r;
   if (card !== undefined) selectedCard = card;
   for (const c of els.gallery.querySelectorAll('.card')) c.setAttribute('aria-pressed', 'false');
@@ -233,42 +234,122 @@ function select(r, card, keepEdits = false) {
     ? `x ${r.offset.x} of ${r.bounds.maxX}, y ${r.offset.y} of ${r.bounds.maxY}`
     : '';
   setNudgeEnabled(!r.plain);
-  showEditState(r.plain
-    ? 'A plain code has no spare bits, so there is nothing here to move.'
+  showEditState(r.plain && overrides.size === 0
+    ? 'Clicking still flips a module here, but a plain code has no letterforms to repair, so a flip buys nothing and costs the same.'
     : null);
   updateCutStats();
 }
 
 // ------------------------------------------------------------------ editing
+//
+// A flip is painted onto the finished grid and nothing is re-solved. That is a
+// deliberate trade. Re-solving keeps the codeword valid, but it moves the rest
+// of the picture to pay for it, and it can only honor a click on a module the
+// solver still owns. Painting the flip on top honors every click, at the price
+// of one damaged codeword, which is what error correction is there for. A
+// letterform that reads as the wrong character is a defect in the one thing
+// the code exists to say; a codeword the reader's phone repairs on the way
+// past is not a defect at all, until there are too many of them.
+
+/**
+ * The grid as it will leave here: the solver's, with the flips painted over.
+ * The thumbnail, the PNG, the SVG and the cutting path all read this rather
+ * than `selected.modules`, so what is on screen is what comes out.
+ */
+function edited(r = selected) {
+  if (!r || overrides.size === 0) return r;
+  const modules = r.modules.slice();
+  for (const [index, value] of overrides) modules[index] = value;
+  return { ...r, modules };
+}
+
+// One map per symbol shape. Building it means building a skeleton, and a click
+// should not have to pay for that.
+const damageMaps = new Map();
+function damageMapFor(r) {
+  const key = `${r.version}-${r.ecl}`;
+  let m = damageMaps.get(key);
+  if (!m) damageMaps.set(key, m = damageMap(r.version, r.ecl));
+  return m;
+}
+
+/**
+ * What the flips have cost, in the currency error correction is paid in.
+ *
+ * Not the number of flipped modules: eight flips inside one codeword cost what
+ * one costs, and since Reed-Solomon blocks are independent and each repairs
+ * floor(ec / 2) codewords on its own, the figure that decides whether the code
+ * still reads is the worst single block rather than the sum.
+ */
+function damage() {
+  if (!selected || overrides.size === 0) return null;
+  const where = damageMapFor(selected);
+  const perBlock = new Map();
+  let onFunction = 0, unread = 0;
+  for (const index of overrides.keys()) {
+    const d = where(index);
+    if (d.kind === 'function') { onFunction++; continue; }
+    if (d.kind === 'unused') { unread++; continue; }
+    if (!perBlock.has(d.block)) perBlock.set(d.block, new Set());
+    perBlock.get(d.block).add(d.codeword);
+  }
+  const spent = [...perBlock.values()].map(set => set.size);
+  return {
+    flips: overrides.size,
+    worst: spent.length ? Math.max(...spent) : 0,
+    capacity: where.correctable,
+    onFunction, unread,
+  };
+}
 
 function showEditState(message = null) {
-  const n = overrides.size;
-  els.clearEdits.hidden = n === 0;
-  els.editState.textContent = message
-    ?? (n === 0 ? 'Click a gray module in the preview to flip it.'
-                : `${n} module${n === 1 ? '' : 's'} set by hand.`);
+  const d = damage();
+  els.clearEdits.hidden = !d;
+  if (message || !d) {
+    els.editState.classList.remove('costly');
+    els.editState.textContent = message
+      ?? 'Click any module in the preview to flip it, and click it again to put it back. Nothing is re-solved: a flip is spent out of error correction.';
+    return;
+  }
+  const parts = [`${d.flips} module${d.flips === 1 ? '' : 's'} flipped by hand`];
+  parts.push(d.worst > d.capacity
+    ? `${d.worst} damaged codewords in the worst block, past the ${d.capacity} it can repair, so this will not decode`
+    : `${d.worst} of ${d.capacity} correctable codewords spent in the worst block`);
+  if (d.onFunction) parts.push(`${d.onFunction} on a function pattern, which no error correction covers`);
+  if (d.unread) parts.push(`${d.unread} on a remainder bit, which nothing reads`);
+  els.editState.textContent = parts.join(', ') + '.';
+  els.editState.classList.toggle('costly', d.worst > d.capacity || d.onFunction > 0);
+}
+
+/** Redraws everything a flip changes. */
+function afterEdit() {
+  redrawBig();
+  const canvas = selectedCard?.querySelector('canvas');
+  if (canvas) {
+    const r = edited();
+    drawToCanvas(r, canvas, { scale: scaleFor(r.size, 320), quiet: DEFAULT_QUIET, ...colors() });
+    painted.set(canvas, r);
+  }
+  updateCutStats();
+  showEditState();
 }
 
 els.bigCanvas.addEventListener('click', (event) => {
   if (!selected) return;
   const index = moduleAt(selected, els.bigCanvas, event.clientX, event.clientY);
   if (index === null) return;
-  if (!selected.editable?.[index]) {
-    showEditState(selected.plain
-      ? 'A plain code has no spare bits: every module is payload, padding, or error correction.'
-      : 'That module is fixed: it is a function pattern, or it carries a bit of the URL.');
-    return;
-  }
-  // Flipping one module means re-solving; the rest of the code moves with it.
-  overrides.set(index, selected.modules[index] ^ 1);
-  showEditState('Re-solving…');
-  replace({ offset: selected.offset, versionOverride: selected.version });
+  // Every module is fair game, function patterns included. The cost is
+  // reported rather than prevented: the reader can see what a click spends and
+  // decide whether the letterform is worth it.
+  if (overrides.has(index)) overrides.delete(index);
+  else overrides.set(index, selected.modules[index] ^ 1);
+  afterEdit();
 });
 
 els.clearEdits.addEventListener('click', () => {
-  if (!selected || overrides.size === 0) return;
+  if (overrides.size === 0) return;
   overrides.clear();
-  replace({ offset: selected.offset, versionOverride: selected.version });
+  afterEdit();
 });
 
 // ---------------------------------------------------------------- placement
@@ -303,10 +384,13 @@ function nudge(dx, dy) {
 function replace(extra) {
   const tk = ++token;
   setNudgeEnabled(false);
+  // A flip is a position on one particular grid. Re-solving builds a different
+  // one, so carrying the flips across would leave them sitting on whatever
+  // happened to land underneath.
+  overrides.clear();
   send({
     type: 'nudge', token: tk, ...readOptions(),
     fontId: selected.fontId, styleId: selected.styleId,
-    overrides: [...overrides].map(([index, value]) => ({ index, value })),
     ...extra,
   }, (msg) => {
     if (msg.token !== tk) return;
@@ -319,10 +403,7 @@ function replace(extra) {
         painted.set(canvas, msg.result);
       }
     }
-    select(msg.result, undefined, true);
-    // Report any click the solver could not honor rather than silently losing it.
-    const ignored = [...overrides].filter(([i, v]) => msg.result.modules[i] !== v).length;
-    showEditState(ignored ? `${overrides.size} set by hand, ${ignored} could not be honored.` : null);
+    select(msg.result, undefined);
   });
 }
 
@@ -337,7 +418,7 @@ function redrawBig() {
   if (!selected) return;
   const scale = Number(els.scale.value);
   els.scaleOut.textContent = scale;
-  drawEditable(selected, els.bigCanvas, { scale, quiet: DEFAULT_QUIET, ...colors() });
+  drawEditable(selected, els.bigCanvas, { scale, quiet: DEFAULT_QUIET, ...colors(), flips: overrides });
   els.contrastWarn.hidden = contrastRatio(els.dark.value, els.light.value) >= 3;
 }
 
@@ -372,14 +453,14 @@ function saveBlob(blob, filename) {
 
 els.dlSvg.addEventListener('click', () => {
   if (!selected) return;
-  const svg = toSVG(selected, { scale: Number(els.scale.value), quiet: DEFAULT_QUIET, ...colors() });
+  const svg = toSVG(edited(), { scale: Number(els.scale.value), quiet: DEFAULT_QUIET, ...colors() });
   saveBlob(svgBlob(svg), `${filenameFor(selected)}.svg`);
 });
 
 els.dlPng.addEventListener('click', async () => {
   if (!selected) return;
   const canvas = document.createElement('canvas');
-  drawToCanvas(selected, canvas, { scale: Number(els.scale.value), quiet: DEFAULT_QUIET, ...colors() });
+  drawToCanvas(edited(), canvas, { scale: Number(els.scale.value), quiet: DEFAULT_QUIET, ...colors() });
   saveBlob(await canvasToPngBlob(canvas), `${filenameFor(selected)}.png`);
 });
 
@@ -413,7 +494,7 @@ function updateCutStats() {
 
   const across = widthMm(selected.size, moduleMm, DEFAULT_QUIET);
   const waist = bridgeWaist(radius) * moduleMm;
-  const { keep, weed } = cutCounts(selected.modules, selected.size, {
+  const { keep, weed } = cutCounts(edited().modules, selected.size, {
     quiet: DEFAULT_QUIET, bridge: bridgeMode(), protect: protectedText(),
   });
   // Below roughly half a millimeter a strip of sign vinyl stretches or tears
@@ -440,7 +521,7 @@ function updateCutStats() {
 function cutGeometry() {
   const moduleMm = Number(els.cutMm.value);
   const total = selected.size + DEFAULT_QUIET * 2;
-  const loops = outlines(selected.modules, selected.size, {
+  const loops = outlines(edited().modules, selected.size, {
     quiet: DEFAULT_QUIET,
     radius: Number(els.cutRadius.value),
     bridge: bridgeMode(),
@@ -604,7 +685,7 @@ function setStatus(text, isError = false) {
 
 // Keep in step with BUILD in sw.js; shown in the footer so it is obvious which
 // version is loaded when something looks out of date.
-const BUILD = '2026-08-27.2';
+const BUILD = '2026-09-03.1';
 document.getElementById('build').textContent = BUILD;
 
 if ('serviceWorker' in navigator) {
