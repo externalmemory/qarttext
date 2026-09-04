@@ -10,9 +10,9 @@
 import { Skeleton, penaltyScore } from './matrix.js';
 import {
   buildDataCodewords, interleave, placeCodewords, applyMask,
-  utf8Bytes, smallestVersion, payloadBits,
+  chooseSegment, smallestVersion, payloadBits,
 } from './encode.js';
-import { domainOf, normalizeUrl } from './layout.js';
+import { domainOf, normalizeUrl, caseFoldableUrl } from './layout.js';
 
 // Weakest to strongest, which is the order the tie-break below relies on.
 export const ECLS = ['L', 'M', 'Q', 'H'];
@@ -34,14 +34,17 @@ function padStandard(data, freeStart) {
 }
 
 /** One plain code at a fixed error-correction level. */
-export function plainCode({ url, payload = null, label: labelIn = null, text = null, ecl = 'M' }) {
-  const encoded = payload ?? normalizeUrl(url);
-  if (!encoded) return null;
-  const bytes = utf8Bytes(encoded);
-  const version = smallestVersion(ecl, bytes.length);
+export function plainCode({ url, payload = null, label: labelIn = null, text = null, ecl = 'M', alnum = true }) {
+  const raw = payload ?? normalizeUrl(url);
+  if (!raw) return null;
+  // same bargain as the solved codes, and it pays better here: a plain code
+  // spends nothing on artwork, so every bit saved is a smaller symbol
+  const seg = chooseSegment(raw, alnum && caseFoldableUrl(raw));
+  const encoded = seg.text;
+  const version = smallestVersion(ecl, seg);
   if (version === null) return null;
 
-  const built = buildDataCodewords(version, ecl, bytes);
+  const built = buildDataCodewords(version, ecl, seg);
   if (!built) return null;
   padStandard(built.data, built.freeStart);
 
@@ -55,15 +58,16 @@ export function plainCode({ url, payload = null, label: labelIn = null, text = n
     if (!best || penalty < best.penalty) best = { modules, penalty, mask };
   }
 
-  const payloadCodewords = Math.ceil(payloadBits(version, bytes.length) / 8);
+  const payloadCodewords = Math.ceil(payloadBits(version, seg) / 8);
   return {
     plain: true,
     id: `plain-${ecl}`,
     modules: best.modules,
     size: skeleton.size,
     version, ecl, mask: best.mask,
-    encoded,
-    label: (text ?? labelIn ?? domainOf(encoded)).trim(),
+    encoded, mode: seg.mode,
+    // taken from the raw payload, so the drawn text keeps the case that was typed
+    label: (text ?? labelIn ?? domainOf(raw)).trim(),
     lines: [],
     fontId: null, styleId: null,
     offset: null, bounds: null,

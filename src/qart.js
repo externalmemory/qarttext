@@ -45,14 +45,15 @@ function streamIndexMaps(layout) {
 
 /**
  * Modules whose value cannot be changed at all: they carry bits of the pinned
- * payload codewords (mode indicator, length, URL bytes, terminator), or they
+ * payload codewords (mode indicator, length, payload data, terminator), or they
  * are function patterns, or they are unused remainder bits. Interleaving puts
  * the payload early in the codeword stream, and placement starts at the
  * bottom-right corner -- so these cluster low and to the right, and artwork
  * placed higher in the symbol reproduces far more faithfully.
  */
-export function pinnedModuleMap(version, ecl, byteLength) {
-  const built = buildDataCodewords(version, ecl, new Uint8Array(byteLength));
+export function pinnedModuleMap(version, ecl, seg) {
+  // only the size of the pinned region matters here, not the values in it
+  const built = buildDataCodewords(version, ecl, seg);
   if (!built) return null;
   const { layout, freeStart, freeCount } = built;
   const skeleton = new Skeleton(version, ecl);
@@ -124,12 +125,12 @@ export function damageMap(version, ecl) {
  * @param {object} opts
  * @param {number} opts.version
  * @param {string} opts.ecl
- * @param {Uint8Array} opts.bytes      URL bytes, pinned
+ * @param {object} opts.seg           the payload segment, pinned
  * @param {Array<{index:number,value:number,weight:number}>} opts.targets
  * @returns {null | {skeleton, results: Array}}  one result per mask
  */
-export function solve({ version, ecl, bytes, targets, seed = 0x9e3779b9 }) {
-  const probe = buildDataCodewords(version, ecl, bytes);
+export function solve({ version, ecl, seg, targets, seed = 0x9e3779b9 }) {
+  const probe = buildDataCodewords(version, ecl, seg);
   if (!probe) return null;
   const { freeStart, freeCount } = probe;
 
@@ -138,7 +139,7 @@ export function solve({ version, ecl, bytes, targets, seed = 0x9e3779b9 }) {
   // remaining freedom would stay at zero and render as a large patch of bare
   // mask pattern -- visually obvious and bad for the penalty score.
   const noise = randomFreeBits(freeCount, seed);
-  const built = buildDataCodewords(version, ecl, bytes, noise);
+  const built = buildDataCodewords(version, ecl, seg, noise);
   const { data, layout } = built;
   const skeleton = new Skeleton(version, ecl);
   const size = skeleton.size;
@@ -263,7 +264,7 @@ export function solve({ version, ecl, bytes, targets, seed = 0x9e3779b9 }) {
     // solution = noise XOR correction, with the correction zero off the pivots
     const free = noise.slice();
     for (let k = 0; k < rank; k++) free[pivotCols[k]] ^= (rhs[k] >> mask) & 1;
-    const solved = buildDataCodewords(version, ecl, bytes, free);
+    const solved = buildDataCodewords(version, ecl, seg, free);
     const stream = interleave(solved.data, solved.layout);
     const unmasked = placeCodewords(skeleton, stream);
     // count how many requested modules actually came out right under this mask

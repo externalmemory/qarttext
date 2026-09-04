@@ -62,6 +62,31 @@ export function domainOf(input) {
   return host.replace(/^www\./i, '') || raw;
 }
 
+/**
+ * Whether every character of this URL is case-insensitive, and so whether it
+ * can be folded to uppercase without changing what it addresses.
+ *
+ * That holds for the scheme (RFC 3986 section 3.1) and the host (section
+ * 3.2.2) and for nothing else: a path, a query or a fragment is case-sensitive
+ * and folding one silently points the code at a different resource, or at a
+ * 404. Userinfo is case-sensitive too. So the test is scheme plus authority
+ * and nothing after it, give or take the empty path a bare trailing slash
+ * writes out.
+ *
+ * Worth the strictness: the payoff is only a smaller symbol, and the cost of
+ * being wrong is a code that scans perfectly and goes to the wrong place.
+ */
+export function caseFoldableUrl(input) {
+  const s = String(input).trim();
+  // Printable ASCII only, and not just because the rest is unencodable anyway.
+  // Uppercasing is not a per-character operation outside ASCII: `strasse.de`
+  // spelled with an eszett folds to `STRASSE.DE`, which is a different name
+  // rather than a case variant of the same one, and every character of it is
+  // in the alphanumeric set, so nothing downstream would catch it.
+  if (!/^[\x20-\x7E]*$/.test(s)) return false;
+  return /^[a-z][a-z0-9+.-]*:\/\/[^/?#@]*\/?$/i.test(s);
+}
+
 /** Normalizes what the user typed into the URL that will actually be encoded. */
 export function normalizeUrl(input) {
   const s = String(input).trim();

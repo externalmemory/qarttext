@@ -2,10 +2,10 @@
 
 import { blockLayout, symbolSize } from './qr.js';
 import { penaltyScore } from './matrix.js';
-import { applyMask, utf8Bytes, smallestVersion, payloadBits } from './encode.js';
+import { applyMask, chooseSegment, smallestVersion, payloadBits } from './encode.js';
 import { solve, pinnedModuleMap } from './qart.js';
 import { FONT_BY_ID } from './fonts.js';
-import { resolveStyle, placeText, wrapText, domainOf, normalizeUrl, DEFAULT_CLEARANCE, INK_WEIGHT } from './layout.js';
+import { resolveStyle, placeText, wrapText, domainOf, normalizeUrl, caseFoldableUrl, DEFAULT_CLEARANCE, INK_WEIGHT } from './layout.js';
 
 // How many workable symbol sizes to try before settling for the best so far.
 // There is no fixed ceiling imposed by scanners: a large symbol reads fine if
@@ -31,6 +31,7 @@ export function generate({
   fontId = 'lower',
   styleId = 'band',
   maxLines = 2,
+  alnum = true,
   versionOverride = null,
   margin = 1,
   clearance = DEFAULT_CLEARANCE,
@@ -38,17 +39,20 @@ export function generate({
 }) {
   // Callers may hand over exactly what to encode and exactly what to draw; a
   // bare url is the shorthand for the common case.
-  const encoded = payload ?? normalizeUrl(url);
-  if (!encoded) return null;
-  const bytes = utf8Bytes(encoded);
-  const label = (text ?? labelIn ?? domainOf(encoded)).trim();
+  const raw = payload ?? normalizeUrl(url);
+  if (!raw) return null;
+  // The label is taken before any case folding, so what gets drawn keeps the
+  // case that was typed even when the payload goes uppercase to buy a mode.
+  const label = (text ?? labelIn ?? domainOf(raw)).trim();
   if (!label) return null;
+  const seg = chooseSegment(raw, alnum && caseFoldableUrl(raw));
+  const encoded = seg.text;
 
   const font = FONT_BY_ID[fontId];
   const style = resolveStyle(styleId);
   if (!font || !style) return null;
 
-  const start = versionOverride ?? smallestVersion(ecl, bytes.length);
+  const start = versionOverride ?? smallestVersion(ecl, seg);
   if (start === null) return null;
   const end = versionOverride ?? MAX_VERSION;
 
@@ -60,7 +64,7 @@ export function generate({
       let tried = 0;
       for (let version = start; version <= end; version++) {
         const attempt = attemptVersion({
-          version, ecl, bytes, label, font, style, fontId, styleId,
+          version, ecl, seg, label, font, style, fontId, styleId,
           maxLines, margin, allowHardWrap, encoded, clearance, offset, minRatio,
         });
         if (!attempt) continue;
@@ -76,7 +80,7 @@ export function generate({
   return best;
 }
 
-function attemptVersion({ version, ecl, bytes, label, font, style, fontId, styleId, maxLines, margin, allowHardWrap, encoded, clearance, offset, minRatio = 0 }) {
+function attemptVersion({ version, ecl, seg, label, font, style, fontId, styleId, maxLines, margin, allowHardWrap, encoded, clearance, offset, minRatio = 0 }) {
   const size = symbolSize(version);
   const usable = size - 2 * margin - 2 * Math.ceil(clearance);
   if (usable <= 0) return null;
@@ -84,7 +88,7 @@ function attemptVersion({ version, ecl, bytes, label, font, style, fontId, style
   const lines = wrapText(font, label, usable, maxLines, allowHardWrap);
   if (!lines) return null;
 
-  const pin = pinnedModuleMap(version, ecl, bytes.length);
+  const pin = pinnedModuleMap(version, ecl, seg);
   if (!pin) return null;
 
   const placed = placeText({
@@ -96,7 +100,7 @@ function attemptVersion({ version, ecl, bytes, label, font, style, fontId, style
   // Cheap rejection, before paying for the elimination.
   if (pin.freeBits < placed.targets.length * minRatio) return null;
 
-  const res = solve({ version, ecl, bytes, targets: placed.targets });
+  const res = solve({ version, ecl, seg, targets: placed.targets });
   if (!res) return null;
 
   const scored = res.results.map(r => {
@@ -115,7 +119,7 @@ function attemptVersion({ version, ecl, bytes, label, font, style, fontId, style
   return {
     modules: bestMask.modules,
     size, version, ecl, mask: bestMask.mask,
-    encoded, label, lines,
+    encoded, mode: seg.mode, label, lines,
     fontId, styleId, margin, clearance: placed.clearance,
     rect: placed.rect, offset: placed.offset, bounds: placed.bounds,
     // 1 where a module can still be changed; the editor needs this to know
@@ -132,7 +136,7 @@ function attemptVersion({ version, ecl, bytes, label, font, style, fontId, style
       score,
       penalty: bestMask.penalty,
       dataCodewords: blockLayout(version, ecl).dataCodewords,
-      payloadCodewords: Math.ceil(payloadBits(version, bytes.length) / 8),
+      payloadCodewords: Math.ceil(payloadBits(version, seg) / 8),
     },
   };
 }

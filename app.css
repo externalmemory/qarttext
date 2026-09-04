@@ -82,6 +82,9 @@ h3 { font-size: 0.95rem; margin: 0 0 0.5rem; }
   padding-bottom: 0.6rem; white-space: nowrap;
 }
 .check input { accent-color: var(--accent); }
+/* The one check whose label is a sentence rather than two words. */
+.check.wrap { white-space: normal; align-items: flex-start; line-height: 1.5; }
+.check.wrap input { margin-top: 0.2rem; flex: none; }
 
 .field { display: flex; flex-direction: column; gap: 0.3rem; min-width: 0; }
 .field > span {

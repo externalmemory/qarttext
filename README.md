@@ -57,7 +57,7 @@ Compose those and the map from *data bits* to *module colors* is affine
 over GF(2).
 
 The URL occupies the first few hundred data bits: a 4-bit mode indicator, a
-length field, the bytes themselves, then a 4-bit terminator. Everything after
+length field, the payload itself, then a 4-bit terminator. Everything after
 that terminator is padding, and a conforming decoder never looks at it. It
 reads exactly the declared number of bytes and stops. So every padding bit is a
 free variable.
@@ -67,7 +67,9 @@ then run Gauss–Jordan elimination over GF(2). The solution is a Reed–Solomon
 codeword that simultaneously spells out the URL and paints the picture.
 
 Cox bought his free bits by appending random characters to the URL's `#` fragment. Taking them from the
-padding instead leaves the URL *byte-for-byte identical* to what you typed.
+padding instead adds nothing to the URL at all: what is encoded is what you
+typed, character for character, unless you turn on alphanumeric encoding, which
+folds case and nothing else.
 
 ### Key Assumption
 
@@ -97,6 +99,7 @@ often costs you a larger code but buys back fidelity.
 | Maximum lines | How many lines the text may wrap onto, up to 5. Breaks are taken at a space, or after a dot or a hyphen. Two is plenty for a domain; a phrase in the override wants more. |
 | Clearance | Rings of whitespace between the letterforms and the surrounding noise. Half steps allowed. Default 2. |
 | Text override | Draw something other than the default label. |
+| Alphanumeric encoding | Encode the address in capitals to buy a denser mode, where that is safe. On by default. |
 
 Three fonts, all authored for this project, times four styles make the twelve
 variants, laid out as a grid with fonts named across the top and styles running
@@ -144,7 +147,57 @@ Text is drawn in whatever case you type. The label keeps the case of the
 host as entered, which means the host is pulled out of the string by hand, since
 `new URL().hostname` is lower-cased by the URL specification. Nothing forces
 case anywhere: a single-case font simply has no glyph for the other case,
-so the lookup falls back to the one it does have.
+so the lookup falls back to the one it does have. That holds whatever the
+encoder does underneath, because the label is taken from the address before the
+encoder sees it.
+
+### Alphanumeric Encoding
+
+QR has a mode that packs two characters into 11 bits, 5½ bits each against byte
+mode's 8. Its alphabet is 45 characters: the digits, `A`–`Z`, space, and
+`$ % * + - . / :`. Lowercase is not in it. Neither is `?`, `=`, `&` or `#`.
+That single omission is why an ordinary URL is byte mode however short it is:
+`https://dimview.org` is not representable, and `HTTPS://DIMVIEW.ORG` is.
+
+Folding an address to uppercase is safe exactly when there is nothing after the
+host. A scheme is case-insensitive (RFC 3986 §3.1) and so is a host (§3.2.2),
+but a path, a query and a fragment are not, and neither is userinfo. So the
+test is scheme plus authority and nothing else, give or take the empty path a
+bare trailing slash writes out. `https://example.com` and
+`https://example.com:8443` qualify; `https://example.com/menu` does not, and
+stays in byte mode. The payoff is only a smaller symbol and the cost of being
+wrong is a code that scans perfectly and goes somewhere else, so the check is
+deliberately strict rather than clever.
+
+It is strict about one thing that is easy to miss: the address has to be plain
+ASCII. Uppercasing is not a per-character operation outside it. `strasse.de`
+spelled with an eszett folds to `STRASSE.DE`, which is a different name rather
+than a case variant of the same one, and every character of it happens to be in
+the alphanumeric set, so nothing further down would have caught it.
+
+What it buys is not really the free bits, which barely move: at version 12 the
+count goes from 2144 to 2196, about 2%. It is the *pinned* modules. The payload
+is what cannot be steered, interleaving puts it early in the stream, and
+placement starts at the bottom-right corner, so those modules cluster exactly
+where letterforms are hardest to place. For `https://dimview.org` at version 12
+the payload occupies 176 immovable modules in byte mode and 128 in
+alphanumeric, 27% fewer. The version search feels that directly:
+
+| address | level | byte mode | alphanumeric |
+| --- | --- | --- | --- |
+| `qarttext.pages.dev` | M | v20, 97×97 | v12, 65×65 |
+| `example.com` | Q | v22, 105×105 | v16, 81×81 |
+| `dimview.org` | Q | v19, 93×93 | v12, 65×65 |
+| `dimview.org` | M | v12, 65×65 | v12, 65×65 |
+
+The last row is the honest one: sometimes the text is what binds and the mode
+buys nothing at all. Plain codes gain more reliably, having no artwork to spend
+the room on — `https://dimview.org` drops from version 2 to version 1.
+
+The cost is what a scanner shows a person before it opens the link:
+`HTTPS://DIMVIEW.ORG`, in capitals. The drawn label is unaffected, so the code
+still reads `dimview.org` in whatever case you typed. Turn the option off to
+encode the address exactly as entered.
 
 ## Symbol Size
 
@@ -265,7 +318,7 @@ worker.js             runs generation off the main thread
 sw.js  manifest.webmanifest   offline shell (network-first)
 src/qr.js             GF(256), Reed–Solomon, version and block tables
 src/matrix.js         function patterns, placement order, masks, penalty
-src/encode.js         byte-mode payload, interleaving, module placement
+src/encode.js         payload segments, interleaving, module placement
 src/qart.js           the GF(2) solver, the heart of it
 src/fonts.js          bitmap fonts
 src/layout.js         URL to label, wrapping, target selection
@@ -452,6 +505,14 @@ A further 432 combinations cover the phone and Wi-Fi payloads, and every Wi-Fi
 payload is parsed back by an independent parser to confirm the escaping
 survives: a semicolon in a password has to come out as a semicolon, not as the
 end of the field.
+
+The alphanumeric encoder is checked the same way. Its bit stream for
+`HELLO WORLD` at version 1-Q reproduces the reference vector exactly, and a
+sweep of 384 combinations (8 addresses × 4 correction levels × 3 fonts × 4
+styles), all of which land in alphanumeric mode, decodes to the uppercased
+address with zero syndromes while the drawn label keeps the case that was
+typed. Against `python-qrcode` in its own alphanumeric mode, 224 grids — 28
+address and level pairs by all eight masks — are identical in every module.
 
 The plain encoder is compared module for module against `python-qrcode`, an
 implementation of a wholly separate lineage: 320 grids, ten payloads by four

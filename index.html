@@ -113,6 +113,17 @@
         <input id="label" type="text" spellcheck="false" autocapitalize="off">
       </label>
     </div>
+    <label class="check wrap">
+      <input id="alnum" type="checkbox" checked> Use alphanumeric (uppercased) encoding if possible
+    </label>
+    <p class="hint">
+      Alphanumeric mode packs 5&frac12; bits per character instead of 8, which leaves
+      more room for the letterforms and often buys a smaller code &mdash; but its
+      character set has no lowercase, so the address has to be encoded in capitals.
+      That is only safe when there is nothing after the host: a scheme and a host name
+      are case-insensitive, a path is not. Codes with a path stay in byte mode.
+      The text drawn inside keeps the case you typed either way.
+    </p>
   </details>
 
   <p class="status" id="status" role="status" aria-live="polite"></p>

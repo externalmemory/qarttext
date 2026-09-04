@@ -153,7 +153,10 @@ export function blockLayout(version, ecl) {
   };
 }
 
-// Byte-mode character-count field width.
-export function charCountBits(version) {
+// Character-count field width. Both the mode and the version band decide it:
+// alphanumeric counts characters and byte mode counts bytes, so the fields are
+// sized differently and a payload that switches mode also switches header size.
+export function charCountBits(version, mode = 'byte') {
+  if (mode === 'alnum') return version <= 9 ? 9 : version <= 26 ? 11 : 13;
   return version <= 9 ? 8 : 16;
 }

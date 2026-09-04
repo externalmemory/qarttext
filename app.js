@@ -13,7 +13,7 @@ const els = {
   form: $('form'), url: $('url'), go: $('go'), type: $('type'),
   tel: $('tel'), ssid: $('ssid'), wifiPass: $('wifiPass'), wifiAuth: $('wifiAuth'),
   wifiHidden: $('wifiHidden'), payloadWarn: $('payloadWarn'),
-  ecl: $('ecl'), maxLines: $('maxLines'), label: $('label'),
+  ecl: $('ecl'), maxLines: $('maxLines'), label: $('label'), alnum: $('alnum'),
   clearance: $('clearance'), offsetOut: $('offsetOut'), autoPlace: $('autoPlace'),
   editState: $('editState'), clearEdits: $('clearEdits'),
   status: $('status'), galleryWrap: $('galleryWrap'), gallery: $('gallery'),
@@ -90,6 +90,7 @@ function readOptions() {
     ecl: els.ecl.value,
     maxLines: Number(els.maxLines.value),
     clearance: Number(els.clearance.value),
+    alnum: els.alnum.checked,
     text: override || null,
   };
 }
