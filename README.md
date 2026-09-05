@@ -177,9 +177,14 @@ encoder sees it.
 
 QR has a mode that packs two characters into 11 bits, 5½ bits each against byte
 mode's 8. Its alphabet is 45 characters: the digits, `A`–`Z`, space, and
-`$ % * + - . / :`. Lowercase is not in it. Neither is `?`, `=`, `&` or `#`.
-That single omission is why an ordinary URL is byte mode however short it is:
-`https://dimview.org` is not representable, and `HTTPS://DIMVIEW.ORG` is.
+`$ % * + - . / :`. Note what is missing. Lowercase letters are not in it, and
+neither are `?`, `=`, `&` or `#`.
+
+The lowercase gap is the one that disqualifies ordinary URLs. Which mode a
+payload can use is decided by the characters in it, not by how many there are,
+so being short does not help: `https://dimview.org` cannot go in alphanumeric
+mode at all and falls back to byte mode at 8 bits a character. Uppercase it and
+every character is among the 45, so `HTTPS://DIMVIEW.ORG` can.
 
 Folding an address to uppercase is safe exactly when there is nothing after the
 host. A scheme is case-insensitive (RFC 3986 §3.1) and so is a host (§3.2.2),
