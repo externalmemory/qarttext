@@ -128,6 +128,16 @@ how far the forced region extends, and which way round the letters run:
 | **Plate**: a filled rectangle behind the text | light plate, dark letters | dark plate, light letters |
 | **Halo**: clearance around the strokes only, noise beyond | light clearance, dark letters | dark clearance, light letters |
 
+The gallery draws each code at a whole number of device pixels per module.
+`image-rendering: pixelated` snaps every module edge to a device pixel, so a
+module that works out at 4.43 pixels comes out four wide in some places and
+five in others -- a fifth of a module, plainly visible as uneven strokes in the
+letterforms. Sizing the canvas from the space the card actually has, rather
+than stretching a nominally-sized one to fit, keeps every module identical. The
+cost is that a code can fall up to one module short of its card, so the cards
+are a fixed equal width and the codes sit centered in them at their true
+relative sizes.
+
 Whitespace is what makes the text readable, far more than the choice of font.
 Clearance of 1 leaves the letterforms fighting the surrounding noise.
 
@@ -225,6 +235,18 @@ letterforms and a plate above 98.5%.
 Note that fidelity is *not* monotonic in version (a larger symbol is usually
 but not always cleaner), so the search cannot simply stop at the first
 improvement.
+
+The first size that works is often the one that broke the label in two, since
+wrapping is exactly what lets a smaller symbol hold the text. That reads badly:
+two short lines span far less of the code than one long one, and the label ends
+up floating in a field of noise. So on finding a workable size the search keeps
+going for up to three more versions in case one of them holds the label whole,
+and takes that instead. Across a 288-code sample it lifts the share drawn on a
+single line from 47% to 66% and the mean width the text spans from 78.9% to
+81.6%, for four tenths of a version on average and no change in stuck
+letterforms. Three is where the curve flattens: six versions of patience buys
+77% single-line but only another half a point of width, at a full version of
+symbol size.
 
 ## Text Placement
 

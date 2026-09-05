@@ -17,6 +17,16 @@ export const MAX_VERSION = 40;
 // ratio costs nothing next to a solve, and skipping these stops the search
 // budget being spent on symbol sizes that were never going to work.
 export const MIN_FREE_RATIO = 1.5;
+// How many versions the search will pay to put the label on fewer lines.
+//
+// Wrapping is what lets a smaller symbol hold the text, so the first version
+// that works is often the one that broke the label in two. That reads badly:
+// two short lines span far less of the code than one long one -- 75% of the
+// width against 86% for the same domain -- and the label ends up floating in
+// the middle of a field of noise. Paying a version or three to keep it whole
+// is usually the better picture, and past that the symbol has grown enough
+// that the wrap was the right call after all.
+export const LINE_PREMIUM = 3;
 
 /**
  * Builds one human-readable QR code.
@@ -62,6 +72,8 @@ export function generate({
   for (const minRatio of [MIN_FREE_RATIO, 0]) {
     for (const allowHardWrap of [false, true]) {
       let tried = 0;
+      // the first workable symbol size, and the fewest lines seen since
+      let good = null;
       for (let version = start; version <= end; version++) {
         const attempt = attemptVersion({
           version, ecl, seg, label, font, style, fontId, styleId,
@@ -71,9 +83,14 @@ export function generate({
         attempt.hardWrapped = allowHardWrap;
         if (!best || attempt.stats.score > best.stats.score) best = attempt;
         // good enough: every letterform module correct and a near-clean plate
-        if (attempt.stats.inkMisses === 0 && attempt.stats.fidelity >= 0.985) return attempt;
+        if (attempt.stats.inkMisses === 0 && attempt.stats.fidelity >= 0.985) {
+          if (!good || attempt.lines.length < good.lines.length) good = attempt;
+          // one line cannot be beaten, and past the premium the wrap has won
+          if (good.lines.length === 1 || version >= good.version + LINE_PREMIUM) return good;
+        }
         if (++tried >= SEARCH_DEPTH) break;
       }
+      if (good) return good;
       if (best) return best;
     }
   }

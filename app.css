@@ -166,6 +166,10 @@ table.gallery {
   border-collapse: collapse;
   width: 100%;
   min-width: 30rem;
+  /* Equal columns. Auto layout sized them from the meta text underneath each
+     code, so the three columns came out different widths for no reason the
+     reader can see, and the codes with them. */
+  table-layout: fixed;
 }
 table.gallery th {
   font-family: var(--mono);
@@ -219,7 +223,9 @@ table.gallery td {
 .card:hover { border-color: var(--accent); transform: translateY(-1px); }
 .card[aria-pressed="true"] { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
 .card canvas {
-  width: 100%; height: auto; display: block;
+  /* width is set per canvas in fitCanvas, so a module lands on whole device
+     pixels; this is the fallback until that runs */
+  width: 100%; max-width: 100%; height: auto; display: block; margin-inline: auto;
   image-rendering: pixelated;
   border-radius: 4px;
   background: #fff;

@@ -164,6 +164,8 @@ function makeCard(r) {
   }
 
   const canvas = document.createElement('canvas');
+  // A first pass at a nominal width so the card is never blank; fitCanvas
+  // redraws it to the width it actually gets once it is in the document.
   drawToCanvas(r, canvas, { scale: scaleFor(r.size, 320), quiet: DEFAULT_QUIET, ...colors() });
 
   const meta = document.createElement('div');
@@ -328,8 +330,8 @@ function afterEdit() {
   const canvas = selectedCard?.querySelector('canvas');
   if (canvas) {
     const r = edited();
-    drawToCanvas(r, canvas, { scale: scaleFor(r.size, 320), quiet: DEFAULT_QUIET, ...colors() });
     painted.set(canvas, r);
+    fitCanvas(canvas, r);
   }
   updateCutStats();
   showEditState();
@@ -400,8 +402,8 @@ function replace(extra) {
     if (selectedCard) {
       const canvas = selectedCard.querySelector('canvas');
       if (canvas) {
-        drawToCanvas(msg.result, canvas, { scale: scaleFor(msg.result.size, 320), quiet: DEFAULT_QUIET, ...colors() });
         painted.set(canvas, msg.result);
+        fitCanvas(canvas, msg.result);
       }
     }
     select(msg.result, undefined);
@@ -564,11 +566,40 @@ els.dark.addEventListener('input', () => { redrawBig(); repaintGallery(); });
 els.light.addEventListener('input', () => { redrawBig(); repaintGallery(); });
 
 const painted = new Map();
-function repaintGallery() {
-  for (const [canvas, r] of painted) {
-    drawToCanvas(r, canvas, { scale: scaleFor(r.size, 320), quiet: DEFAULT_QUIET, ...colors() });
-  }
+
+/**
+ * Draws a gallery canvas at a whole number of device pixels per module.
+ *
+ * `image-rendering: pixelated` snaps every module edge to a device pixel, so
+ * unless a module is an exact number of them some modules come out a pixel
+ * wider than their neighbours. At the sizes these cards use that is a fifth to
+ * a quarter of a module, which is plainly visible in the letterforms: the
+ * strokes of the text stop being even. Picking the scale from the space the
+ * card actually has, rather than from a nominal 320, keeps every module the
+ * same width. The canvas then gets exactly the width it was drawn for, which
+ * is at most one module short of the card.
+ */
+function fitCanvas(canvas, r) {
+  const total = r.size + DEFAULT_QUIET * 2;
+  const dpr = window.devicePixelRatio || 1;
+  canvas.style.width = '100%';
+  const avail = canvas.getBoundingClientRect().width || 320;
+  const scale = Math.max(1, Math.floor((avail * dpr) / total));
+  drawToCanvas(r, canvas, { scale, quiet: DEFAULT_QUIET, ...colors() });
+  canvas.style.width = `${(total * scale) / dpr}px`;
 }
+
+function repaintGallery() {
+  for (const [canvas, r] of painted) fitCanvas(canvas, r);
+}
+
+// The card width follows the viewport, and a resize changes which scale is
+// whole, so the codes are redrawn rather than left to stretch.
+let refitTimer = null;
+window.addEventListener('resize', () => {
+  clearTimeout(refitTimer);
+  refitTimer = setTimeout(repaintGallery, 150);
+});
 
 // ----------------------------------------------------------------- generate
 
@@ -601,8 +632,9 @@ function run() {
     if (msg.type === 'variant') {
       const card = makeCard(msg.result);
       const canvas = card.querySelector('canvas');
-      if (canvas) painted.set(canvas, msg.result);
       cells.get(msg.result.id)?.replaceChildren(card);
+      // after insertion: the canvas has no width to measure until it is placed
+      if (canvas) { painted.set(canvas, msg.result); fitCanvas(canvas, msg.result); }
       setStatus(`Solving… ${msg.i + 1} of ${msg.n}`);
       if (!selected && msg.result.modules) select(msg.result, card);
     }
@@ -630,8 +662,8 @@ function showPlain(opts) {
   if (!code) { els.plainCard.replaceChildren(); return; }
   const card = makeCard(code);
   const canvas = card.querySelector('canvas');
-  if (canvas) painted.set(canvas, code);
   els.plainCard.replaceChildren(card);
+  if (canvas) { painted.set(canvas, code); fitCanvas(canvas, code); }
 }
 
 function setStatus(text, isError = false) {
