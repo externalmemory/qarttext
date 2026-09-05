@@ -8,6 +8,13 @@ const SP = '.';
 // --------------------------------------------------------------- micro 3x5 --
 // Capital forms only, three modules wide where possible. This is the densest
 // legible option and the only one that fits a long domain on a small symbol.
+//
+// The Q is PICO-8's (CC-0), taken because the one drawn here closed its bowl a
+// row above the baseline and left the tail as a module touching nothing, which
+// read as an O with a dot under it. PICO-8 opens the bottom right of the bowl
+// instead and runs the tail out through the middle column, so it joins. Its
+// top row is one module rather than three, drawn to suit PICO-8's clipped O
+// rather than the square one here, so it sits lighter than its neighbours.
 const MICRO = {
   A: ['.#.', '#.#', '###', '#.#', '#.#'],
   B: ['##.', '#.#', '##.', '#.#', '##.'],
@@ -25,7 +32,7 @@ const MICRO = {
   N: ['#..#', '##.#', '#.##', '#..#', '#..#'],
   O: ['###', '#.#', '#.#', '#.#', '###'],
   P: ['##.', '#.#', '##.', '#..', '#..'],
-  Q: ['###', '#.#', '#.#', '###', '..#'],
+  Q: ['.#.', '#.#', '#.#', '##.', '.##'],   // PICO-8's, see the note above
   R: ['##.', '#.#', '##.', '#.#', '#.#'],
   S: ['.##', '#..', '.#.', '..#', '##.'],
   T: ['###', '.#.', '.#.', '.#.', '.#.'],

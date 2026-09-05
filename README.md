@@ -606,8 +606,17 @@ both radii.
   ancestor is lcamtuf's `font-inline.h`. The remaining twenty-four punctuation
   glyphs of that face are drawn here to match it.
 
-The `Micro 3×5` and `Mixed 5×8` tables are original, drawn to the QR module
-grid. These are the faces they are modeled on:
+- Lexaloffle, the [PICO-8](https://www.lexaloffle.com/pico-8.php?page=faq)
+  font (CC-0), for one glyph: the `Q` of `Micro 3×5`. The one drawn here closed
+  its bowl a row above the baseline and left the tail touching nothing, so it
+  read as an O with a dot beneath it. PICO-8 opens the bottom right of the bowl
+  and runs the tail out through the middle column, where it joins. The glyph
+  was read off picolove's transcription of the face rather than from Lexaloffle
+  directly, checked by confirming the whole alphabet decodes correctly around
+  it.
+
+The `Micro 3×5` and `Mixed 5×8` tables are otherwise original, drawn to the QR
+module grid. These are the faces they are modeled on:
 
 - [Departure Mono](https://departuremono.com/)
 - [urcades/pilot](https://github.com/urcades/pilot)
