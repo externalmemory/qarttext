@@ -226,6 +226,29 @@ be right: a period landing on the dark center of an alignment pattern is
 free, a stroke crossing the dark modules of the timing line is free, and the
 light ring inside an alignment pattern can serve as part of the clearance.
 
+Among positions the solver is indifferent to -- no worse by a few plate
+modules, and never by a letterform module, which costs a thousand -- it sits as
+close to the middle as it can. Distance from the middle is not measured
+symmetrically: a step above counts half what a step below costs, because a band
+above the middle reads as deliberate where the same band below it reads as
+having slipped. Across a 240-code sample that lifts 15 codes off or above the
+middle and costs nothing, one stuck letterform against two.
+
+Preferring the higher of two equally distant positions does nothing on its own,
+which is worth recording because it looks like it should. The candidate sort is
+stable and positions are generated with the row index ascending, so the higher
+of an exact tie already won. Only weighting the two directions differently
+moves anything.
+
+Whether the text is off-center at all is mostly not the payload's doing. The
+immovable modules do form a strip down the right-hand side, but the horizontal
+placement barely feels it: across that sample the mean offset from center is
+under half a module, and about as many codes sit right of center as left. The
+band is off-center where it is because that is where the letterforms come out
+exact. Forcing it to the middle at the same symbol size turns 2 stuck
+letterforms into 162; buying the same centering with a larger symbol costs two
+versions for a short domain and eight for a long one.
+
 The detail panel exposes a nudge pad if you want to place the text by hand;
 each nudge re-solves from scratch, and directions with no room are grayed out.
 

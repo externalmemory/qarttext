@@ -34,6 +34,10 @@ const ditherAt = (r, c) => BAYER4[(r & 3) * 4 + (c & 3)] / 16;
 /** Weight marking a letterform module, so callers can count them. */
 export const INK_WEIGHT = W_INK;
 
+/** What a step above the middle costs against a step below it, when choosing
+ *  between placements the solver is otherwise indifferent to. */
+export const UPWARD_BIAS = 0.5;
+
 /**
  * The label to draw: host name for web URLs, something sensible otherwise.
  * The host is pulled out of the raw string rather than via `new URL()`, whose
@@ -286,10 +290,23 @@ export function placeText({
     }
     // Among positions no worse by a few plate modules -- never by a letterform
     // module, which costs 1000 -- sit as close to the middle as possible.
+    //
+    // Distance from the middle is not measured symmetrically. A band above the
+    // middle reads as deliberate where the same band below it reads as having
+    // slipped, so a step up counts half what a step down costs and the search
+    // drifts high when the bits are indifferent. Preferring the higher of two
+    // equally distant positions is not enough on its own: the sort is stable
+    // and candidates are pushed with y0 ascending, so that already happened,
+    // and it moved nothing.
+    //
+    // The weight is a tuning constant, not a derived one. Half was picked by
+    // sweeping it: it lifts 15 of 240 sample codes off or above the middle
+    // without costing a letterform, and quarter and three-quarters are both
+    // slightly worse on stuck letterforms.
     const viable = candidates.filter(c => c.cost <= bestCost + tol);
-    viable.sort((a, b) =>
-      (Math.abs(a.y0 - centerY) + Math.abs(a.x0 - centerX)) -
-      (Math.abs(b.y0 - centerY) + Math.abs(b.x0 - centerX)));
+    const fromCenter = (c) => Math.abs(c.x0 - centerX) +
+      (c.y0 <= centerY ? (centerY - c.y0) * UPWARD_BIAS : (c.y0 - centerY));
+    viable.sort((a, b) => (fromCenter(a) - fromCenter(b)) || (a.y0 - b.y0));
     chosen = viable[0];
   }
 
