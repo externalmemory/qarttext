@@ -106,9 +106,21 @@ variants, laid out as a grid with fonts named across the top and styles running
 down. The styles are not labeled: plate against halo, and upright against
 inverted, are plain from the pictures, and on a phone a column of labels costs
 more width than the codes. Each card carries its own name for a screen reader
-or a hover instead. The fonts are
-`Micro 3×5` and `Pixel 5×7`, which hold a single case, and `Mixed 5×8`, which
-has real upper and lower case with descenders. The styles cross two choices:
+or a hover instead. The fonts are `Micro 3×5`, which holds a single case and is
+the densest legible option; `Compact 5×5`, which has upper and lower case at
+that same height; and `Mixed 5×8`, which has real upper and lower case with
+descenders.
+
+`Compact 5×5` replaced a `Pixel 5×7` that earned nothing. Seven rows tall and
+uppercase-only, its two-line block came to 40×16 modules against `Mixed 5×8`'s
+36×18 -- one percent smaller for the loss of an entire case, and wider than
+`Mixed 5×8` on every domain measured. The 5×5 face is two rows shorter, has
+both cases, and its block is 39×12, twenty-seven percent smaller than the face
+it replaces. Across five domains at two correction levels it matches or beats
+the old face in nine rows of ten and beats `Mixed 5×8` in seven:
+`news.ycombinator.com` at level M lands on version 18 against version 24. The
+old table survives inside `src/fonts.js` because `Mixed 5×8` builds its
+capitals and digits from it. The styles cross two choices:
 how far the forced region extends, and which way round the letters run:
 
 |  | upright | inverted |
@@ -567,8 +579,13 @@ both radii.
 
 - Russ Cox, [QArt Codes](https://research.swtch.com/qart), for the construction.
 
-Reference faces for the letterforms. The glyph tables in `src/fonts.js` are
-original, drawn to the QR module grid, but these are what they are modeled on:
+- Maurycy Zarzycki, [mcufont](https://maurycyz.com/projects/mcufont/) (CC0),
+  for the letters, digits and nine punctuation marks of `Compact 5×5`. Its own
+  ancestor is lcamtuf's `font-inline.h`. The remaining twenty-four punctuation
+  glyphs of that face are drawn here to match it.
+
+The `Micro 3×5` and `Mixed 5×8` tables are original, drawn to the QR module
+grid. These are the faces they are modeled on:
 
 - [Departure Mono](https://departuremono.com/)
 - [urcades/pilot](https://github.com/urcades/pilot)
