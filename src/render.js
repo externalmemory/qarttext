@@ -144,10 +144,27 @@ export function canvasToPngBlob(canvas) {
   return new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
 }
 
-/** Filename stem: departuremono-com-v14-M-lower-band */
+/**
+ * Filename stem: departuremono-com-v14-M-lower-band, or пример-рф-v11-M-micro-plate.
+ *
+ * Letters and digits are kept whatever the script. Reducing to ASCII did more
+ * than transliterate badly: it deleted a Cyrillic label outright, so every
+ * Russian code downloaded as the same stem and the second one saved over the
+ * first. Filesystems have taken UTF-8 for decades. Everything a filesystem
+ * does object to -- the path separators, the shell and Windows reserved
+ * punctuation -- is punctuation, and still falls out here.
+ *
+ * NFC first, so a label written with combining marks keeps them rather than
+ * having them dropped as non-letters. Then a cap, because a text override can
+ * be a phrase and a filename cannot be arbitrarily long.
+ */
 export function filenameFor(result) {
-  const host = (result.label || 'qr').replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '');
-  const bits = [host, `v${result.version}`, result.ecl];
+  const host = (result.label || 'qr')
+    .normalize('NFC')
+    .replace(/[^\p{L}\p{N}\p{M}]+/gu, '-')
+    .slice(0, 64)
+    .replace(/^-+|-+$/g, '');
+  const bits = [host || 'qr', `v${result.version}`, result.ecl];
   if (result.fontId) bits.push(result.fontId);
   if (result.styleId) bits.push(result.styleId);
   return bits.join('-').toLowerCase();
