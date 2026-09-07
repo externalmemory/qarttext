@@ -111,6 +111,27 @@ the densest legible option; `Compact 5×5`, which has upper and lower case at
 that same height; and `Mixed 5×8`, which has real upper and lower case with
 descenders.
 
+All three carry the Russian alphabet as well as the Latin one. Eleven capitals
+-- `А В Е К М Н О Р С Т Х` -- are the same shape as a Latin letter and reuse it
+outright; the rest are drawn. In `Compact 5×5` this costs nothing at all, since
+every Cyrillic letter wants the five columns that face already gives every
+glyph. In `Micro 3×5` it costs some width: `И` collapses to two bare posts at
+three columns and `Д` loses its legs, so both take four, and `Ж Ш Щ Ы Ю` take
+five, which is the allowance the face already makes for `N` at four and `M` and
+`W` at five.
+
+`Й` is the letter that does not fit anywhere. Its breve needs a row above a
+full-height body, and in the short faces every row is spoken for. Squashing the
+body into one row fewer was the obvious move and the wrong one: it produces
+exactly the fault the `Q` had, a letter sitting shorter than everything beside
+it. So a glyph may now stand one row taller than its face and hang that row
+above the line. Nothing else typesets this text, so the line box simply grows,
+and only when the mark falls on the first line -- lower lines put it in the
+leading, which is two rows and has the space to spare. Lowercase needs none of
+this: `й` fits its breve in the row that lowercase leaves empty above the
+x-height. `Ё` is drawn as `Е`, which is how Russian writes it in running text
+anyway.
+
 `Compact 5×5` replaced a `Pixel 5×7` that earned nothing. Seven rows tall and
 uppercase-only, its two-line block came to 40×16 modules against `Mixed 5×8`'s
 36×18 -- one percent smaller for the loss of an entire case, and wider than

@@ -163,23 +163,38 @@ export function wrapText(font, text, maxWidth, maxLines, allowHardWrap = true) {
   return hard.length <= maxLines ? hard : null;
 }
 
+/** Rows a line needs above its body, for glyphs carrying a mark up there. */
+function lineAscent(font, line) {
+  let a = 0;
+  for (const ch of line) a = Math.max(a, glyphFor(font, ch).ascent ?? 0);
+  return a;
+}
+
 function blockMetrics(font, lines) {
   const width = Math.max(...lines.map(l => measure(font, l)));
-  const height = lines.length * font.height + (lines.length - 1) * font.leading;
-  return { width, height };
+  // Only the first line can make the block taller. A mark on any lower line
+  // goes into the leading above it, which is two rows, so it never reaches
+  // the line before and costs nothing.
+  const ascent = lines.length ? lineAscent(font, lines[0]) : 0;
+  const height = ascent + lines.length * font.height + (lines.length - 1) * font.leading;
+  return { width, height, ascent };
 }
 
 /** Rasterises the lines into an ink grid the size of the whole padded box. */
-function rasterise(font, lines, width, boxW, boxH, pad) {
+function rasterise(font, lines, width, boxW, boxH, pad, ascent = 0) {
   const ink = new Uint8Array(boxW * boxH);
   lines.forEach((line, li) => {
     let x = pad + Math.floor((width - measure(font, line)) / 2);
-    const y0 = pad + li * (font.height + font.leading);
+    // baseline of this line, with the block already pushed down by any mark
+    // the first line carries
+    const y0 = pad + ascent + li * (font.height + font.leading);
     for (const ch of line) {
       const g = glyphFor(font, ch);
-      for (let r = 0; r < font.height; r++) {
+      const top = y0 - g.ascent;      // an overhanging mark starts a row higher
+      for (let r = 0; r < g.rows.length; r++) {
+        const y = top + r;
         for (let c = 0; c < g.width; c++) {
-          if (g.rows[r][c] && x + c < boxW && y0 + r < boxH) ink[(y0 + r) * boxW + x + c] = 1;
+          if (g.rows[r][c] && x + c < boxW && y >= 0 && y < boxH) ink[y * boxW + x + c] = 1;
         }
       }
       x += g.width + font.tracking;
@@ -199,7 +214,7 @@ export function placeText({
 }) {
   const font = FONT_BY_ID[fontId];
   const style = resolveStyle(styleId);
-  const { width, height } = blockMetrics(font, lines);
+  const { width, height, ascent } = blockMetrics(font, lines);
 
   // A clearance of 2.5 means two rings fully cleared and a third only partly:
   // roughly half the benefit of a third ring for roughly half the forced
@@ -211,7 +226,7 @@ export function placeText({
   const boxW = width + pad * 2, boxH = height + pad * 2;
   if (boxW > size || boxH > size) return null;
 
-  const ink = rasterise(font, lines, width, boxW, boxH, pad);
+  const ink = rasterise(font, lines, width, boxW, boxH, pad, ascent);
 
   // Chebyshev distance from the nearest stroke, so one pass classifies every
   // module in the box: 0 is ink, 1..pad is clearance, beyond that is plate.
