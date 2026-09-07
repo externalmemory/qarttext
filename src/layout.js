@@ -163,21 +163,22 @@ export function wrapText(font, text, maxWidth, maxLines, allowHardWrap = true) {
   return hard.length <= maxLines ? hard : null;
 }
 
-/** Rows a line needs above its body, for glyphs carrying a mark up there. */
-function lineAscent(font, line) {
-  let a = 0;
-  for (const ch of line) a = Math.max(a, glyphFor(font, ch).ascent ?? 0);
-  return a;
+/** Rows a line hangs outside its body, above it and below it. */
+function lineOverhang(font, line, key) {
+  let n = 0;
+  for (const ch of line) n = Math.max(n, glyphFor(font, ch)[key]);
+  return n;
 }
 
 function blockMetrics(font, lines) {
   const width = Math.max(...lines.map(l => measure(font, l)));
-  // Only the first line can make the block taller. A mark on any lower line
-  // goes into the leading above it, which is two rows, so it never reaches
-  // the line before and costs nothing.
-  const ascent = lines.length ? lineAscent(font, lines[0]) : 0;
-  const height = ascent + lines.length * font.height + (lines.length - 1) * font.leading;
-  return { width, height, ascent };
+  // Only the outermost lines can make the block taller: a mark on any line but
+  // the first, or a tail on any line but the last, goes into the leading, which
+  // is two rows and has the room to spare.
+  const ascent = lines.length ? lineOverhang(font, lines[0], 'ascent') : 0;
+  const descent = lines.length ? lineOverhang(font, lines[lines.length - 1], 'descent') : 0;
+  const body = lines.length * font.height + (lines.length - 1) * font.leading;
+  return { width, height: ascent + body + descent, ascent };
 }
 
 /** Rasterises the lines into an ink grid the size of the whole padded box. */

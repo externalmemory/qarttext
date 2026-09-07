@@ -122,15 +122,26 @@ five, which is the allowance the face already makes for `N` at four and `M` and
 
 `Й` is the letter that does not fit anywhere. Its breve needs a row above a
 full-height body, and in the short faces every row is spoken for. Squashing the
-body into one row fewer was the obvious move and the wrong one: it produces
-exactly the fault the `Q` had, a letter sitting shorter than everything beside
-it. So a glyph may now stand one row taller than its face and hang that row
-above the line. Nothing else typesets this text, so the line box simply grows,
-and only when the mark falls on the first line -- lower lines put it in the
-leading, which is two rows and has the space to spare. Lowercase needs none of
-this: `й` fits its breve in the row that lowercase leaves empty above the
-x-height. `Ё` is drawn as `Е`, which is how Russian writes it in running text
-anyway.
+body into one row fewer was the obvious move and the wrong one: it produces a
+letter sitting shorter than everything beside it. So a glyph may stand one row
+taller than its face and hang that row outside the line, above the body for a
+mark and below the baseline for a tail. Nothing else typesets this text, so the
+line box simply grows, and only for the outermost lines: a mark on any line but
+the first, or a tail on any line but the last, goes into the leading, which is
+two rows and has the space to spare. Lowercase needs none of this: `й` fits its
+breve in the row that lowercase leaves empty above the x-height. `Ё` is drawn
+as `Е`, which is how Russian writes it in running text anyway.
+
+The `Q` of `Micro 3×5` is what that mechanism was worth beyond the letter it
+was built for. That glyph went through two compromises first. Its own drawing
+closed the bowl a row above the baseline and left the tail as a module touching
+nothing, which read as an O with a dot beneath it. PICO-8's, borrowed to
+replace it, attached the tail properly but carried a one-module top drawn to
+suit PICO-8's clipped O rather than the square one here, and sat visibly
+lighter than its neighbours. Once a glyph could hang a row outside the body,
+the shape a Q actually wants became available: this face's own O, unchanged,
+with a tail below the baseline. It costs one row of block height, and only on
+a label that contains a `Q`.
 
 `Compact 5×5` replaced a `Pixel 5×7` that earned nothing. Seven rows tall and
 uppercase-only, its two-line block came to 40×16 modules against `Mixed 5×8`'s
@@ -632,17 +643,8 @@ both radii.
   ancestor is lcamtuf's `font-inline.h`. The remaining twenty-four punctuation
   glyphs of that face are drawn here to match it.
 
-- Lexaloffle, the [PICO-8](https://www.lexaloffle.com/pico-8.php?page=faq)
-  font (CC-0), for one glyph: the `Q` of `Micro 3×5`. The one drawn here closed
-  its bowl a row above the baseline and left the tail touching nothing, so it
-  read as an O with a dot beneath it. PICO-8 opens the bottom right of the bowl
-  and runs the tail out through the middle column, where it joins. The glyph
-  was read off picolove's transcription of the face rather than from Lexaloffle
-  directly, checked by confirming the whole alphabet decodes correctly around
-  it.
-
-The `Micro 3×5` and `Mixed 5×8` tables are otherwise original, drawn to the QR
-module grid. These are the faces they are modeled on:
+The `Micro 3×5` and `Mixed 5×8` tables are original, drawn to the QR module
+grid. These are the faces they are modeled on:
 
 - [Departure Mono](https://departuremono.com/)
 - [urcades/pilot](https://github.com/urcades/pilot)

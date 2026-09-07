@@ -9,12 +9,13 @@ const SP = '.';
 // Capital forms only, three modules wide where possible. This is the densest
 // legible option and the only one that fits a long domain on a small symbol.
 //
-// The Q is PICO-8's (CC-0), taken because the one drawn here closed its bowl a
-// row above the baseline and left the tail as a module touching nothing, which
-// read as an O with a dot under it. PICO-8 opens the bottom right of the bowl
-// instead and runs the tail out through the middle column, so it joins. Its
-// top row is one module rather than three, drawn to suit PICO-8's clipped O
-// rather than the square one here, so it sits lighter than its neighbours.
+// The Q is this face's own O with a tail hanging below the baseline, which is
+// what a Q is. It took two earlier attempts: a bowl closed a row early with
+// the tail floating under it, which read as an O with a dot; then PICO-8's,
+// which attached the tail properly but carried a one-module top drawn to suit
+// PICO-8's clipped O rather than the square one here, and sat visibly lighter
+// than its neighbours. Once a glyph could hang a row outside the body, for Й,
+// the obvious shape became available and neither compromise was needed.
 const MICRO = {
   A: ['.#.', '#.#', '###', '#.#', '#.#'],
   B: ['##.', '#.#', '##.', '#.#', '##.'],
@@ -32,7 +33,7 @@ const MICRO = {
   N: ['#..#', '##.#', '#.##', '#..#', '#..#'],
   O: ['###', '#.#', '#.#', '#.#', '###'],
   P: ['##.', '#.#', '##.', '#..', '#..'],
-  Q: ['.#.', '#.#', '#.#', '##.', '.##'],   // PICO-8's, see the note above
+  Q: ['###', '#.#', '#.#', '#.#', '###', '..#'],   // O with a tail below the baseline
   R: ['##.', '#.#', '##.', '#.#', '#.#'],
   S: ['.##', '#..', '.#.', '..#', '##.'],
   T: ['###', '.#.', '.#.', '.#.', '.#.'],
@@ -478,6 +479,10 @@ Object.assign(LOWER, {
   я: ['.....', '.....', '.####', '#...#', '.####', '.#..#', '#...#', '.....'],
 });
 
+// Characters whose extra row hangs below the baseline rather than above the
+// body. Only consulted for a glyph that is actually a row taller than its face.
+const DESCENDS = new Set(['Q']);
+
 /**
  * Trims columns that are blank in every row, so a glyph's width is exactly its
  * ink. Without this a letterform drawn inside a wider cell -- `r` and `f` in
@@ -498,19 +503,22 @@ function trimBlankColumns(rows) {
 function compile(id, name, note, table, height) {
   const glyphs = {};
   for (const [ch, raw] of Object.entries(table)) {
-    // A glyph may stand one row taller than the face, and that row sits above
-    // the body. Nothing else typesets this text, so a mark with nowhere to go
-    // inside the body can overhang instead of squashing the letter into fewer
-    // rows than its neighbours -- which is what Й needs, and the squashed
-    // alternative reads as a letter missing its top.
-    const ascent = raw.length - height;
-    if (ascent !== 0 && ascent !== 1) {
+    // A glyph may stand one row taller than the face. Nothing else typesets
+    // this text, so a stroke with nowhere to go inside the body can hang
+    // outside it rather than squash the letter into fewer rows than its
+    // neighbours. By default the extra row goes above, which is what a mark
+    // wants -- Й; the few letters in DESCENDS hang it below the baseline
+    // instead, which is what a tail wants -- Q.
+    const extra = raw.length - height;
+    if (extra !== 0 && extra !== 1) {
       throw new Error(`${id} '${ch}': ${raw.length} rows, want ${height} or ${height + 1}`);
     }
+    const descent = DESCENDS.has(ch) ? extra : 0;
+    const ascent = extra - descent;
     const w0 = raw[0].length;
     for (const r of raw) if (r.length !== w0) throw new Error(`${id} '${ch}': ragged rows`);
     const rows = trimBlankColumns(raw);
-    glyphs[ch] = { width: rows[0].length, ascent, rows: rows.map(r => Array.from(r, c => (c === '#' ? 1 : 0))) };
+    glyphs[ch] = { width: rows[0].length, ascent, descent, rows: rows.map(r => Array.from(r, c => (c === '#' ? 1 : 0))) };
   }
   return { id, name, note, height, glyphs, tracking: 1, leading: 2 };
 }
