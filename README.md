@@ -113,12 +113,22 @@ descenders.
 
 All three carry the Russian alphabet as well as the Latin one. Eleven capitals
 -- `А В Е К М Н О Р С Т Х` -- are the same shape as a Latin letter and reuse it
-outright; the rest are drawn. In `Compact 5×5` this costs nothing at all, since
-every Cyrillic letter wants the five columns that face already gives every
-glyph. In `Micro 3×5` it costs some width: `И` collapses to two bare posts at
-three columns and `Д` loses its legs, so both take four, and `Ж Ш Щ Ы Ю` take
-five, which is the allowance the face already makes for `N` at four and `M` and
-`W` at five.
+outright; the rest are drawn. `Compact 5×5` pays almost nothing for them, since
+nearly every Cyrillic letter wants the five columns that face already gives
+every glyph. `Micro 3×5` pays some width: `И` collapses to two bare posts at
+three columns, so it takes four, and `Ж Ш Ы Ю Ф` take five, which is the
+allowance the face already makes for `N` at four and `M` and `W` at five.
+
+`Ц` and `Щ` take one column more than their stems need, in every face. Their
+bottom bar runs a column past the right stem and the tail hangs from the end of
+it, outside the stems rather than under one. Under one -- which is where it
+started -- `Ц` is exactly `Ч` drawn two rows lower: two stems, a bar across,
+and a stroke below the bar on the right. The only thing separating them is
+where the bar falls relative to a baseline the reader cannot see unless another
+letter is next to it, which is a thin distinction for a letterform that has to
+survive being read out of a field of noise. The extra column costs a module of
+label width and, measured over seven Russian labels in all three faces, no
+symbol sizes: some went up a version, some down, and the median did not move.
 
 `Й` is the letter that does not fit anywhere. Its breve needs a row above a
 full-height body, and in the short faces every row is spoken for. Squashing the
