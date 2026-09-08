@@ -728,10 +728,35 @@ function setStatus(text, isError = false) {
 
 // ------------------------------------------------------------------ offline
 
-// Keep in step with BUILD in sw.js; shown in the footer so it is obvious which
-// version is loaded when something looks out of date.
-const BUILD = '2026-09-03.1';
-document.getElementById('build').textContent = BUILD;
+/**
+ * The build stamp lives in sw.js, which needs it to name its cache, and is
+ * read back from there rather than written down a second time here.
+ *
+ * It was written down twice, with a comment on each saying to keep them in
+ * step, and they drifted for eight releases: the footer named a version that
+ * had not been current for a week. A version indicator that is wrong is worse
+ * than none, because the one job it has is telling you what you are running
+ * when something looks out of date.
+ */
+async function showBuild() {
+  const el = document.getElementById('build');
+  try {
+    // what the worker actually installed; newest, in case a sweep is pending
+    const names = (await caches.keys()).filter(k => k.startsWith('hrqr-')).sort();
+    if (names.length) {
+      el.textContent = names[names.length - 1].slice('hrqr-'.length);
+      return;
+    }
+  } catch { /* caches are unavailable in some contexts */ }
+  try {
+    // nothing installed yet, so read it out of the worker source
+    const src = await (await fetch('./sw.js', { cache: 'no-store' })).text();
+    el.textContent = src.match(/const BUILD = '([^']+)'/)?.[1] ?? 'unknown';
+  } catch {
+    el.textContent = 'unknown';
+  }
+}
+showBuild();
 
 if ('serviceWorker' in navigator) {
   // If a worker was already in charge and a new one takes over, the page is

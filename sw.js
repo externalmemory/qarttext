@@ -6,9 +6,10 @@
 // breaks in confusing ways. Correctness beats the few milliseconds that
 // serving from cache would save on an app this small.
 //
-// Bump BUILD whenever the shell changes; it names the cache and is shown in
-// the page footer so it is obvious which version is actually loaded.
-const BUILD = '2026-09-08.5';
+// Bump BUILD whenever the shell changes. It names the cache, and the page
+// reads it back off that cache name for the footer, so this is the only place
+// it is written down -- there were two, and they drifted.
+const BUILD = '2026-09-08.6';
 const CACHE = `hrqr-${BUILD}`;
 
 const SHELL = [
