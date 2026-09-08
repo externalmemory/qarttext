@@ -28,6 +28,8 @@
       <span>Kind</span>
       <select id="type">
         <option value="url" selected>URL</option>
+        <option value="text">Text</option>
+        <option value="email">Email</option>
         <option value="tel">Phone</option>
         <option value="wifi">Wi-Fi</option>
         <option value="mecard">Contact</option>
@@ -39,6 +41,26 @@
         <span>URL</span>
         <input id="url" type="text" inputmode="url" spellcheck="false" autocapitalize="off"
                value="https://example.com/" placeholder="https://example.com/page">
+      </label>
+    </div>
+
+    <div class="fields" id="fields-text" hidden>
+      <label class="field">
+        <span>Text</span>
+        <input id="plainText" type="text" value="Meeting room 4B"
+               placeholder="written inside the code, and encoded by it">
+      </label>
+    </div>
+
+    <div class="fields" id="fields-email" hidden>
+      <label class="field">
+        <span>Address</span>
+        <input id="mailTo" type="text" inputmode="email" spellcheck="false" autocapitalize="off"
+               value="alex@example.com">
+      </label>
+      <label class="field">
+        <span>Subject</span>
+        <input id="mailSubject" type="text" placeholder="optional">
       </label>
     </div>
 

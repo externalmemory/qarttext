@@ -8,6 +8,8 @@ import { normalizeUrl, domainOf } from './layout.js';
 
 export const TYPES = [
   { id: 'url', name: 'URL' },
+  { id: 'text', name: 'Text' },
+  { id: 'email', name: 'Email' },
   { id: 'tel', name: 'Phone' },
   { id: 'wifi', name: 'Wi-Fi' },
   { id: 'mecard', name: 'Contact' },
@@ -68,6 +70,17 @@ export function mecardEscape(value) {
   return String(value).replace(/([\\;,])/g, '\\$1');
 }
 
+/**
+ * A mailto: address. RFC 6068 leaves `@` and ordinary mail punctuation alone,
+ * so this encodes only what would otherwise start or split a header: an
+ * unencoded `?` would begin the header section, `&` would start another
+ * header, `#` a fragment, and a space would end the URI at some readers.
+ */
+function mailtoAddress(value) {
+  return String(value).trim().replace(/[?&#\s]/g, c =>
+    '%' + c.charCodeAt(0).toString(16).toUpperCase().padStart(2, '0'));
+}
+
 /** Digits and a leading plus: what a dialler actually wants. */
 export function telDigits(input) {
   const trimmed = String(input).trim();
@@ -102,6 +115,28 @@ export function buildPayload(spec) {
         warning: auth !== 'nopass' && spec.password
           ? 'This code carries the password in clear text. Anyone who scans or photographs it can join the network.'
           : undefined,
+      };
+    }
+    case 'text': {
+      // The payload and the label are the same string, which is as close to
+      // the point of this whole tool as a kind gets: the code says what it
+      // says, and there is no second version of it to drift out of step.
+      // `plain`, not `text`: generate() already takes a `text` option and that
+      // one is the label override, which is very nearly the opposite of this
+      const plain = String(spec.plain ?? '').trim();
+      return { payload: plain, label: plain };
+    }
+    case 'email': {
+      const address = mailtoAddress(spec.address ?? '');
+      // encodeURIComponent is stricter than RFC 6068 needs, which costs a few
+      // bytes on punctuation and is the right way round to be wrong here
+      const subject = String(spec.subject ?? '').trim();
+      const query = subject ? `?subject=${encodeURIComponent(subject)}` : '';
+      return {
+        payload: address ? `mailto:${address}${query}` : '',
+        // the address itself, not its domain: the address is the part a
+        // reader would want to check before writing to it
+        label: String(spec.address ?? '').trim(),
       };
     }
     case 'mecard': {

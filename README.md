@@ -93,6 +93,28 @@ often costs you a larger code but buys back fidelity.
 
 ## Options
 
+The `Text` kind encodes the string you type and draws that same string inside
+it. That is as close to the point of the whole tool as a kind gets: there is
+one string, so there is no second version of it to drift out of step with the
+first, and the code says exactly and only what it says.
+
+The `Email` kind writes a `mailto:` and draws the address rather than its
+domain, since the address is the part a reader would check before writing to
+it. A subject is optional and percent-encoded; the address keeps its `@` and
+ordinary mail punctuation, as RFC 6068 allows, and encodes only what would
+otherwise start or split a header.
+
+Two kinds were considered and left out. A Bitcoin address fits perfectly well
+-- fifty bytes, version 23, 47 mm, 98.9% plate -- but there is nothing honest
+to write inside it. The address itself is forty-two characters of base32 that
+no one can check by eye, and partial recognition of one is exactly how address
+substitution works; a name instead would put a claim in the readable half of a
+payment code that the payload does not make. The same objection, less sharply,
+rules out a `geo:` pair of coordinates. Worth recording that an uppercased
+bech32 address is alphanumeric-encodable and 31% smaller, which BIP-173 asks
+for -- but the fold here is gated on a scheme and host being case-insensitive,
+and `bitcoin:` has no host, so that saving is declined on purpose.
+
 The `Contact` kind writes MECARD rather than vCard, and the reason is the
 whole subject of this page. The same four fields come to 63 bytes as MECARD
 and 107 as vCard 3.0, which at version 20 is 531 immovable modules against

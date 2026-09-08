@@ -15,6 +15,7 @@ const els = {
   wifiHidden: $('wifiHidden'), payloadWarn: $('payloadWarn'),
   mcGiven: $('mcGiven'), mcFamily: $('mcFamily'), mcTel: $('mcTel'),
   mcEmail: $('mcEmail'), mcSite: $('mcSite'),
+  plainText: $('plainText'), mailTo: $('mailTo'), mailSubject: $('mailSubject'),
   ecl: $('ecl'), maxLines: $('maxLines'), label: $('label'), alnum: $('alnum'),
   clearance: $('clearance'), offsetOut: $('offsetOut'), autoPlace: $('autoPlace'),
   editState: $('editState'), clearEdits: $('clearEdits'),
@@ -84,6 +85,9 @@ function readOptions() {
     password: els.wifiPass.value,
     auth: els.wifiAuth.value,
     hidden: els.wifiHidden.checked,
+    plain: els.plainText.value,
+    address: els.mailTo.value,
+    subject: els.mailSubject.value,
     given: els.mcGiven.value,
     family: els.mcFamily.value,
     email: els.mcEmail.value,
@@ -106,7 +110,7 @@ function readOptions() {
 // Only the fields belonging to the selected kind are shown.
 function showFields() {
   const type = els.type.value;
-  for (const id of ['url', 'tel', 'wifi', 'mecard']) {
+  for (const id of ['url', 'text', 'email', 'tel', 'wifi', 'mecard']) {
     document.getElementById(`fields-${id}`).hidden = id !== type;
   }
 }
