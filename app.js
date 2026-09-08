@@ -13,6 +13,8 @@ const els = {
   form: $('form'), url: $('url'), go: $('go'), type: $('type'),
   tel: $('tel'), ssid: $('ssid'), wifiPass: $('wifiPass'), wifiAuth: $('wifiAuth'),
   wifiHidden: $('wifiHidden'), payloadWarn: $('payloadWarn'),
+  mcGiven: $('mcGiven'), mcFamily: $('mcFamily'), mcTel: $('mcTel'),
+  mcEmail: $('mcEmail'), mcSite: $('mcSite'),
   ecl: $('ecl'), maxLines: $('maxLines'), label: $('label'), alnum: $('alnum'),
   clearance: $('clearance'), offsetOut: $('offsetOut'), autoPlace: $('autoPlace'),
   editState: $('editState'), clearEdits: $('clearEdits'),
@@ -82,6 +84,12 @@ function readOptions() {
     password: els.wifiPass.value,
     auth: els.wifiAuth.value,
     hidden: els.wifiHidden.checked,
+    given: els.mcGiven.value,
+    family: els.mcFamily.value,
+    email: els.mcEmail.value,
+    site: els.mcSite.value,
+    // the contact card has its own number field, so the phone kind keeps its own
+    ...(type === 'mecard' ? { number: els.mcTel.value } : {}),
   });
   els.payloadWarn.textContent = warning ?? '';
   els.payloadWarn.hidden = !warning;
@@ -98,7 +106,7 @@ function readOptions() {
 // Only the fields belonging to the selected kind are shown.
 function showFields() {
   const type = els.type.value;
-  for (const id of ['url', 'tel', 'wifi']) {
+  for (const id of ['url', 'tel', 'wifi', 'mecard']) {
     document.getElementById(`fields-${id}`).hidden = id !== type;
   }
 }

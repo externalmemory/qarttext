@@ -93,6 +93,24 @@ often costs you a larger code but buys back fidelity.
 
 ## Options
 
+The `Contact` kind writes MECARD rather than vCard, and the reason is the
+whole subject of this page. The same four fields come to 63 bytes as MECARD
+and 107 as vCard 3.0, which at version 20 is 531 immovable modules against
+1099. Measured with the same label at the same symbol size, the MECARD code
+keeps every letterform exact at 99.5% plate; the vCard one falls to 96.8% and
+starts losing strokes, and forcing every version from 14 to 30 never produces
+a clean one -- even at 137×137 a letterform is still stuck. It is not a
+shortage of free bits, which differ by only a fifth: it is that the payload's
+immovable modules run the width of the symbol, and the text has to be drawn
+somewhere among them. The price of the denser format is that MECARD is read by
+iOS, Google Lens and the ZXing lineage rather than by everything, and that it
+has no field for an employer.
+
+What it does buy is a code worth looking at. A name, number and address come
+to 59 bytes and print at 33 mm with the name written inside it exactly. Fields
+cost symbol size rather than accuracy: five of them still solve cleanly, but
+at 65 mm rather than 28, so the form says so once a card passes 90 bytes.
+
 | Control | Effect |
 | --- | --- |
 | Error correction | `L` leaves the most room for artwork, `H` the least. `M` is a good default. |

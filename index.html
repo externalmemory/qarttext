@@ -30,6 +30,7 @@
         <option value="url" selected>URL</option>
         <option value="tel">Phone</option>
         <option value="wifi">Wi-Fi</option>
+        <option value="mecard">Contact</option>
       </select>
     </label>
 
@@ -67,6 +68,32 @@
         </select>
       </label>
       <label class="check"><input id="wifiHidden" type="checkbox"> Hidden network</label>
+    </div>
+
+    <div class="fields" id="fields-mecard" hidden>
+      <label class="field">
+        <span>Given name</span>
+        <input id="mcGiven" type="text" spellcheck="false" value="Alex">
+      </label>
+      <label class="field">
+        <span>Family name</span>
+        <input id="mcFamily" type="text" spellcheck="false" value="Kim">
+      </label>
+      <label class="field">
+        <span>Phone</span>
+        <input id="mcTel" type="text" inputmode="tel" spellcheck="false" autocapitalize="off"
+               value="+1(555)123-4567">
+      </label>
+      <label class="field">
+        <span>Email</span>
+        <input id="mcEmail" type="text" inputmode="email" spellcheck="false" autocapitalize="off"
+               value="alex@example.com">
+      </label>
+      <label class="field">
+        <span>Website</span>
+        <input id="mcSite" type="text" inputmode="url" spellcheck="false" autocapitalize="off"
+               placeholder="optional">
+      </label>
     </div>
 
     <button id="go" type="submit">Generate</button>
