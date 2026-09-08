@@ -157,8 +157,13 @@ mark and below the baseline for a tail. Nothing else typesets this text, so the
 line box simply grows, and only for the outermost lines: a mark on any line but
 the first, or a tail on any line but the last, goes into the leading, which is
 two rows and has the space to spare. Lowercase needs none of this: `й` fits its
-breve in the row that lowercase leaves empty above the x-height. `Ё` is drawn
-as `Е`, which is how Russian writes it in running text anyway.
+breve in the row that lowercase leaves empty above the x-height. `Ё` carries
+its dots the same way, and for the same reason it is worth the row: the
+undotted spelling Russian usually writes is available by typing `е`, so
+drawing the letter without them would take the choice away rather than offer
+it. In the two faces that have no lowercase of their own, `ё` falls back to
+the capital and ascends with it; where there is a lowercase, the dots sit in
+the empty row and cost nothing at all.
 
 The `Q` of `Micro 3×5` is what that mechanism was worth beyond the letter it
 was built for. That glyph went through two compromises first. Its own drawing
