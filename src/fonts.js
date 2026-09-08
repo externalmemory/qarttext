@@ -212,7 +212,7 @@ const COMPACT = {
 // that way in running text anyway, and the two dots are what the sixth row
 // would have to carry.
 Object.assign(MICRO, {
-  А: MICRO.A, В: MICRO.B, Е: MICRO.E, Ё: MICRO.E, К: MICRO.K, М: MICRO.M,
+  А: MICRO.A, В: MICRO.B, Е: MICRO.E, Ё: MICRO.E, М: MICRO.M,
   Н: MICRO.H, О: MICRO.O, Р: MICRO.P, С: MICRO.C, Т: MICRO.T, Х: MICRO.X,
   Б: ['##.', '#..', '##.', '#.#', '##.'],
   Г: ['###', '#..', '#..', '#..', '#..'],
@@ -221,6 +221,7 @@ Object.assign(MICRO, {
   З: ['##.', '..#', '.#.', '..#', '##.'],
   И: ['#..#', '#.##', '##.#', '#..#', '#..#'],
   Й: ['..#.', '#..#', '#.##', '##.#', '#..#', '#..#'],
+  К: ['#.#', '##.', '##.', '#.#', '#.#'],
   Л: ['.##', '#.#', '#.#', '#.#', '#.#'],
   П: ['###', '#.#', '#.#', '#.#', '#.#'],
   У: ['#.#', '#.#', '.##', '..#', '##.'],
