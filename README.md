@@ -129,7 +129,8 @@ the densest legible option; `Compact 5×5`, which has upper and lower case at
 that same height; and `Mixed 5×8`, which has real upper and lower case with
 descenders.
 
-All three carry the Russian alphabet as well as the Latin one. Eleven capitals
+All three carry the Russian, Ukrainian and Belarusian alphabets as well as the
+Latin one. Eleven capitals
 -- `А В Е К М Н О Р С Т Х` -- are the same shape as a Latin letter and reuse it
 outright; the rest are drawn. `Compact 5×5` pays almost nothing for them, since
 nearly every Cyrillic letter wants the five columns that face already gives
@@ -164,6 +165,15 @@ drawing the letter without them would take the choice away rather than offer
 it. In the two faces that have no lowercase of their own, `ё` falls back to
 the capital and ascends with it; where there is a lowercase, the dots sit in
 the empty row and cost nothing at all.
+
+Ukrainian and Belarusian need five letters beyond the Russian thirty-three,
+and four of the five want the same overhang. `І` and `і` are the Latin `I` and
+`i` and reuse them. `Є` is a `С` with a bar across it. `Ґ`, `Ї` and `Ў` each
+carry a mark above a body that already fills its face, so the capitals hang a
+row and the lowercase put the mark in the row it has spare -- the same split
+as `Й` and `Ё`. Only `ї` needed a shape of its own rather than a mark added to
+one: in `Mixed 5×8` the lowercase `i` is a single column wide, which holds one
+dot and cannot hold two.
 
 The `Q` of `Micro 3×5` is what that mechanism was worth beyond the letter it
 was built for. That glyph went through two compromises first. Its own drawing
