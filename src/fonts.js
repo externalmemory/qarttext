@@ -27,7 +27,7 @@ const MICRO = {
   H: ['#.#', '#.#', '###', '#.#', '#.#'],
   I: ['###', '.#.', '.#.', '.#.', '###'],
   J: ['..#', '..#', '..#', '#.#', '.#.'],
-  K: ['#.#', '##.', '#..', '##.', '#.#'],
+  K: ['#.#', '##.', '##.', '#.#', '#.#'],
   L: ['#..', '#..', '#..', '#..', '###'],
   M: ['#...#', '##.##', '#.#.#', '#...#', '#...#'],
   N: ['#..#', '##.#', '#.##', '#..#', '#..#'],
@@ -212,7 +212,7 @@ const COMPACT = {
 // that way in running text anyway, and the two dots are what the sixth row
 // would have to carry.
 Object.assign(MICRO, {
-  А: MICRO.A, В: MICRO.B, Е: MICRO.E, М: MICRO.M,
+  А: MICRO.A, В: MICRO.B, Е: MICRO.E, К: MICRO.K, М: MICRO.M,
   Н: MICRO.H, О: MICRO.O, Р: MICRO.P, С: MICRO.C, Т: MICRO.T, Х: MICRO.X,
   Б: ['##.', '#..', '##.', '#.#', '##.'],
   Ё: ['#.#', '###', '#..', '##.', '#..', '###'],
@@ -222,7 +222,6 @@ Object.assign(MICRO, {
   З: ['##.', '..#', '.#.', '..#', '##.'],
   И: ['#..#', '#.##', '##.#', '#..#', '#..#'],
   Й: ['..#.', '#..#', '#.##', '##.#', '#..#', '#..#'],
-  К: ['#.#', '##.', '##.', '#.#', '#.#'],
   // Ukrainian and Belarusian. І is the Latin I; the rest hang their mark
   // above the body the way Й and Ё do.
   І: MICRO.I,
