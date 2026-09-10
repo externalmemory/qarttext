@@ -50,9 +50,17 @@ A Wi-Fi code carries the password in clear text: anyone who scans or photographs
 it can join the network. The app says so next to the fields.
 
 The fonts cover printable ASCII and the Russian, Ukrainian and Belarusian
-alphabets. Anything outside that -- accented Latin, Greek, CJK, emoji -- draws
-as `?`. That affects only the label; the payload is always encoded exactly, in
-UTF-8, whatever it contains.
+alphabets. An accented Latin letter loses its accent rather than the letter:
+the label is decomposed and marks a face cannot draw are dropped, so `café`
+draws as `cafe` and `Kraków` as `Krakow`. Reading a word without its accent is
+a compromise; reading `caf?` is a defect. Only marks come off -- `ø`, `ł`, `ß`,
+`æ`, `œ` have no base underneath to fall back to, and they still draw as `?`,
+as do Greek, CJK and emoji.
+
+What is reported is the label as typed, not as drawn, so the caption under a
+code and the name of the file it downloads both keep the accent. Only the
+letterforms lose it. And this affects the label alone: the payload is always
+encoded exactly, in UTF-8, whatever it contains.
 
 ## Implementation Details
 

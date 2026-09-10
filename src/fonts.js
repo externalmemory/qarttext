@@ -555,6 +555,28 @@ export const FONT_BY_ID = Object.fromEntries(FONTS.map(f => [f.id, f]));
 // Text is drawn in whatever case it was typed. A single-case font simply has
 // no glyph for the other case, so the lookup falls back to the one it does
 // have rather than the case being forced anywhere.
+/**
+ * The label as this face can actually draw it.
+ *
+ * A character the face has is left alone. One it does not is decomposed and
+ * its combining marks dropped, so café draws as cafe rather than caf?. Losing
+ * an accent is a compromise; a question mark is a defect, and a reader can
+ * still read the word without the mark.
+ *
+ * Only marks come off. A letterform that genuinely differs from its base --
+ * ø, ł, ı, æ, œ, ß -- does not decompose and is left to fall back, because
+ * there is no base underneath it to fall back to. Nor is anything folded that
+ * is not a mark: NFD rather than NFKD, so ½ is not quietly rewritten as 1⁄2.
+ */
+export function drawableText(font, text) {
+  const has = (c) => font.glyphs[c] || font.glyphs[c.toUpperCase()] || font.glyphs[c.toLowerCase()];
+  let out = '';
+  for (const ch of String(text).normalize('NFC')) {
+    out += has(ch) ? ch : ch.normalize('NFD').replace(/\p{M}/gu, '');
+  }
+  return out;
+}
+
 export function glyphFor(font, ch) {
   return font.glyphs[ch] || font.glyphs[ch.toUpperCase()] || font.glyphs[ch.toLowerCase()] || font.glyphs['?'] || font.glyphs[' '];
 }

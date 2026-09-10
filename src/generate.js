@@ -4,7 +4,7 @@ import { blockLayout, symbolSize } from './qr.js';
 import { penaltyScore } from './matrix.js';
 import { applyMask, chooseSegment, smallestVersion, payloadBits } from './encode.js';
 import { solve, pinnedModuleMap } from './qart.js';
-import { FONT_BY_ID } from './fonts.js';
+import { FONT_BY_ID, drawableText } from './fonts.js';
 import { resolveStyle, placeText, wrapText, domainOf, normalizeUrl, caseFoldableUrl, DEFAULT_CLEARANCE, INK_WEIGHT } from './layout.js';
 
 // How many workable symbol sizes to try before settling for the best so far.
@@ -61,6 +61,10 @@ export function generate({
   const font = FONT_BY_ID[fontId];
   const style = resolveStyle(styleId);
   if (!font || !style) return null;
+  // What gets drawn may differ from what gets reported: an accent this face
+  // cannot draw comes off the letter rather than turning it into a question
+  // mark. The label keeps the accent, so the caption and the file name do too.
+  const drawn = drawableText(font, label) || label;
 
   const start = versionOverride ?? smallestVersion(ecl, seg);
   if (start === null) return null;
@@ -76,7 +80,7 @@ export function generate({
       let good = null;
       for (let version = start; version <= end; version++) {
         const attempt = attemptVersion({
-          version, ecl, seg, label, font, style, fontId, styleId,
+          version, ecl, seg, label, drawn, font, style, fontId, styleId,
           maxLines, margin, allowHardWrap, encoded, clearance, offset, minRatio,
         });
         if (!attempt) continue;
@@ -97,12 +101,12 @@ export function generate({
   return best;
 }
 
-function attemptVersion({ version, ecl, seg, label, font, style, fontId, styleId, maxLines, margin, allowHardWrap, encoded, clearance, offset, minRatio = 0 }) {
+function attemptVersion({ version, ecl, seg, label, drawn, font, style, fontId, styleId, maxLines, margin, allowHardWrap, encoded, clearance, offset, minRatio = 0 }) {
   const size = symbolSize(version);
   const usable = size - 2 * margin - 2 * Math.ceil(clearance);
   if (usable <= 0) return null;
 
-  const lines = wrapText(font, label, usable, maxLines, allowHardWrap);
+  const lines = wrapText(font, drawn, usable, maxLines, allowHardWrap);
   if (!lines) return null;
 
   const pin = pinnedModuleMap(version, ecl, seg);
