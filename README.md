@@ -22,25 +22,37 @@ python3 -m http.server 8000     # then visit http://localhost:8000/
 | Kind | Encodes | Drawn Text |
 | --- | --- | --- |
 | URL | `https://example.com/` | the host name |
+| Text | `Meeting room 4B` | the same string, which is the whole idea |
+| Email | `mailto:alex@example.com` | the address |
 | Phone | `tel:+15551234567` | the number as you typed it, `+1(555)123-4567` |
 | Wi-Fi | `WIFI:T:WPA;S:Free WiFi;P:Swordfish;;` | the network name |
+| Contact | `MECARD:N:Kim,Alex;TEL:+15551234567;;` | the person's name |
 
 Only the payload builder and the label differ; the encoder, solver, placement
 and fonts are shared, and none of them needed changing to add a kind.
 
-The Wi-Fi format separates fields with semicolons and keys from values with
-colons, so `\ ; , : "` must be escaped inside a value. Getting that wrong does
-not produce a broken code. It produces one that scans perfectly and silently
-truncates the password at the first semicolon, or joins the wrong network. The
-builder escapes them, quotes values that would otherwise read as hex, and the
-tests round-trip every payload back through an independent parser.
+Three of these have separators inside them that a value could contain, and all
+three fail the same way when that is got wrong: not with a broken code, but
+with one that scans perfectly and hands over the wrong thing. Wi-Fi separates
+fields with semicolons and keys from values with colons, so `\ ; , : "` are
+escaped inside a value and anything that would otherwise read as hex is
+quoted; get it wrong and the password truncates at the first semicolon, or the
+code joins a different network. MECARD escapes `\ ; ,` for the same reason,
+and deliberately leaves the colon alone: it separates a key from a value and
+means nothing afterwards, but it appears in every URL, so escaping it would
+make the common case depend on the reader unescaping correctly. Email
+percent-encodes the subject and, in the address, only what would start or
+split a header. Every one of these round-trips back through a parser that
+shares no code with the writer, which is how the escaping is tested and how
+the MECARD name bug below was caught.
 
 A Wi-Fi code carries the password in clear text: anyone who scans or photographs
 it can join the network. The app says so next to the fields.
 
-The fonts cover printable ASCII. Anything outside it (accented letters, other
-scripts, emoji) draws as `?`. That affects only the label; the payload is
-always encoded exactly.
+The fonts cover printable ASCII and the Russian, Ukrainian and Belarusian
+alphabets. Anything outside that -- accented Latin, Greek, CJK, emoji -- draws
+as `?`. That affects only the label; the payload is always encoded exactly, in
+UTF-8, whatever it contains.
 
 ## Implementation Details
 
@@ -483,7 +495,7 @@ src/fonts.js          bitmap fonts
 src/layout.js         URL to label, wrapping, target selection
 src/generate.js       version search and mask choice
 src/variants.js       the gallery
-src/payload.js        URL, phone and Wi-Fi payloads, and their labels
+src/payload.js        the six kinds of payload, and their labels
 src/render.js         SVG and PNG output
 scripts/make-icons.mjs  builds the icons using the app's own encoder
 ```
@@ -664,6 +676,13 @@ A further 432 combinations cover the phone and Wi-Fi payloads, and every Wi-Fi
 payload is parsed back by an independent parser to confirm the escaping
 survives: a semicolon in a password has to come out as a semicolon, not as the
 end of the field.
+
+The contact and email payloads are read back the same way, MECARD by a parser
+written against the format and `mailto:` by the platform's own URL parser.
+That caught a bug worth the trouble: a card with a given name and no family
+name emitted `N:Solo`, and since the field is family-first a reader filed the
+one name it found as a surname. The code scanned perfectly and the contact
+came out wrong, which is exactly the failure this kind of test exists for.
 
 The alphanumeric encoder is checked the same way. Its bit stream for
 `HELLO WORLD` at version 1-Q reproduces the reference vector exactly, and a
