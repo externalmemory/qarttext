@@ -1,4 +1,4 @@
-# QArtText: how it works
+# QArtText Technical Details
 
 The short version, the live app and the credits are in the
 [README](README.md); this is the long one.
