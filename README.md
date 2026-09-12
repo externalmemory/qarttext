@@ -15,13 +15,22 @@ app with no external dependencies, no build step, and no network calls.
 python3 -m http.server 8000     # then visit http://localhost:8000/
 ```
 
-![a QR code reading QArtText, which scans to this project's own site](examples/qarttext-v11-m-lower-plate.png)
+![a QR code reading QArtText, which scans to this project's own site](examples/qarttext-v11-l-lower-plate.png)
 
-That image is a working code. It scans to `qarttext.pages.dev`, it says so in
-`Mixed 5×8` on a plate, and it is version 11 at level M with every letterform
-exact and 98.8% of the plate clean -- which is what the app gives you for
-typing the domain and the word. The app icon is the same trick at 29 modules,
-and is built by the encoder in this repository rather than drawn.
+That image is a working code: version 11 at level L, `Mixed 5×8` on a plate,
+scanning to `qarttext.pages.dev`. It also shows both of the things you can do
+to a code after the solver has finished with it.
+
+The text was nudged right, off the placement the offset search picked, so the
+`Q` clears the dashed column beside it. And the last `t` was finished by hand:
+two modules flipped in the editor, at column 52, rows 18 and 19. Those two sit
+in the same Reed-Solomon codeword, so between them they cost one -- of the ten
+that block can lose and still be read. Nine are still in hand. That is the
+accounting the editor shows you as you click, and the reason it counts per
+block rather than over the whole symbol.
+
+The app icon is the same trick at 29 modules, and is built by the encoder in
+this repository rather than drawn.
 
 ## Kinds of Code
 
