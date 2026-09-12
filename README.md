@@ -1,8 +1,8 @@
 # QartText
 
-QR codes with the domain name, phone number or network name written legibly
-inside them, in a bitmap font, and **without spending any of the
-error-correction redundancy**.
+QR codes with what they point at written legibly inside them -- a domain name,
+a phone number, a network, a person, or any text you like -- in a bitmap font,
+and **without spending any of the error-correction redundancy**.
 
 Named for Russ Cox's [QArt codes](https://research.swtch.com/qart), the
 construction it is built on, with text in place of the picture.
@@ -15,7 +15,13 @@ app with no external dependencies, no build step, and no network calls.
 python3 -m http.server 8000     # then visit http://localhost:8000/
 ```
 
-![the app icon, which is itself a human-readable QR code](icons/icon-512.png)
+![a QR code reading QArtText, which scans to this project's own site](examples/qarttext-v11-m-lower-plate.png)
+
+That image is a working code. It scans to `qarttext.pages.dev`, it says so in
+`Mixed 5×8` on a plate, and it is version 11 at level M with every letterform
+exact and 98.8% of the plate clean -- which is what the app gives you for
+typing the domain and the word. The app icon is the same trick at 29 modules,
+and is built by the encoder in this repository rather than drawn.
 
 ## Kinds of Code
 
