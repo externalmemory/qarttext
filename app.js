@@ -720,7 +720,7 @@ function setStatus(text, isError = false) {
     deferred = null;
     button.hidden = true;
     how.textContent = outcome === 'accepted'
-      ? 'Installed. Look for QartText alongside your other apps.'
+      ? 'Installed. Look for QArtText alongside your other apps.'
       : 'Not installed. You can install it later from the browser menu.';
   });
   window.addEventListener('appinstalled', () => { section.hidden = true; });
