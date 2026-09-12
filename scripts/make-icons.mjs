@@ -6,7 +6,7 @@ import { writeFileSync } from 'node:fs';
 import { generate } from '../src/generate.js';
 import { FONT_BY_ID, glyphFor, measure } from '../src/fonts.js';
 
-const SITE = 'https://qarttext.pages.dev/';
+const SITE = 'https://qarttext.pages.dev';
 
 const CRC = new Uint32Array(256);
 for (let n = 0; n < 256; n++) {
@@ -51,12 +51,22 @@ function writePng(path, width, height, pixel) {
   return png.length;
 }
 
-// The icon is a working code for the site itself. Kept short so the modules
-// stay chunky: at 192 px this is about 4 pixels per module, comfortably
-// scannable, where spelling out the whole domain would be closer to 3.
-const code = generate({ url: SITE, text: 'QR', ecl: 'M', fontId: 'pixel', styleId: 'plate', maxLines: 1 });
+// The icon is a working code for the site itself, in as few modules as it can
+// be so they stay chunky at icon sizes. Level L and a clearance of 1 buy that:
+// version 3, twenty-nine modules, about six pixels each at 192 px. The
+// alphanumeric encoding is what puts version 3 in reach -- the same URL in
+// byte mode does not fit one.
+const code = generate({
+  url: SITE, text: 'QR', ecl: 'L', fontId: 'compact', styleId: 'plate',
+  maxLines: 1, clearance: 1,
+});
 if (!code) throw new Error('icon code did not generate');
-if (code.encoded !== SITE) throw new Error(`icon encodes ${code.encoded}, not ${SITE}`);
+// Case-insensitively, because a path-free URL is encoded uppercase. The fold
+// is the only difference allowed, and comparing this way still catches a code
+// that points somewhere else.
+if (code.encoded.toLowerCase() !== SITE.toLowerCase()) {
+  throw new Error(`icon encodes ${code.encoded}, not ${SITE}`);
+}
 console.log(`icon encodes ${code.encoded}: v${code.version}, ${code.size + 8} modules including quiet zone`);
 const { modules, size } = code;
 
@@ -104,11 +114,13 @@ writeFileSync('icons/icon.svg',
 `);
 console.log(`icons/icon.svg  v${code.version} ${size}x${size}`);
 
-// A QR code cannot be read at favicon size: at 16 px this one would be a
-// quarter of a pixel per module. So the favicon is the letterforms alone,
-// drawn from the same font, where 16 px leaves roughly two pixels per module.
+// A QR code cannot be read at favicon size: at 16 px this one would be well
+// under half a pixel per module. So the favicon is the letterforms alone,
+// drawn from the same font, which gets it to about 1.2 pixels per module --
+// still thin, but a shape rather than a smudge. The line printed below says
+// what it actually comes to, so the claim cannot drift from the code.
 {
-  const font = FONT_BY_ID.pixel, text = 'QR', pad = 1;
+  const font = FONT_BY_ID.compact, text = 'QR', pad = 1;
   const w = measure(font, text) + pad * 2;
   const side = Math.max(w, font.height + pad * 2);
   const ox = Math.floor((side - measure(font, text)) / 2);
