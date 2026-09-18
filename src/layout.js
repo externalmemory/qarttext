@@ -172,25 +172,47 @@ function lineOverhang(font, line, key) {
   return n;
 }
 
+/** The highest and lowest inked rows of a line, counted from its body's top. */
+function lineInk(font, line) {
+  let top = Infinity, bottom = -Infinity;
+  for (const ch of line) {
+    const g = glyphFor(font, ch);
+    g.rows.forEach((row, r) => {
+      if (row.some(Boolean)) { top = Math.min(top, r - g.ascent); bottom = Math.max(bottom, r - g.ascent); }
+    });
+  }
+  return { top, bottom };
+}
+
 function blockMetrics(font, lines) {
   const width = Math.max(...lines.map(l => measure(font, l)));
-  // Only the outermost lines can make the block taller: a mark on any line but
-  // the first, or a tail on any line but the last, goes into the leading, which
-  // is two rows and has the room to spare.
-  const ascent = lines.length ? lineOverhang(font, lines[0], 'ascent') : 0;
-  const descent = lines.length ? lineOverhang(font, lines[lines.length - 1], 'descent') : 0;
-  const body = lines.length * font.height + (lines.length - 1) * font.leading;
-  return { width, height: ascent + body + descent, ascent };
+  // The first line's marks and the last line's tails make the block taller.
+  // Between lines, the leading is the default; lines move further apart only
+  // where ink on one would otherwise come within a row of ink on the next --
+  // a tail over a mark, y over Й -- so a blank row always separates them.
+  const asc = lines.map(l => lineOverhang(font, l, 'ascent'));
+  const desc = lines.map(l => lineOverhang(font, l, 'descent'));
+  const reach = lines.map(l => lineInk(font, l));
+  const tops = [];
+  let y = asc[0] ?? 0;
+  lines.forEach((_, i) => {
+    if (i) {
+      const pitch = font.height + font.leading;
+      const clash = reach[i - 1].bottom + 2 - (pitch + reach[i].top);
+      y += pitch + Math.max(0, clash);
+    }
+    tops.push(y);
+  });
+  const height = lines.length ? y + font.height + desc[lines.length - 1] : 0;
+  return { width, height, tops };
 }
 
 /** Rasterises the lines into an ink grid the size of the whole padded box. */
-function rasterise(font, lines, width, boxW, boxH, pad, ascent = 0) {
+function rasterise(font, lines, width, boxW, boxH, pad, tops) {
   const ink = new Uint8Array(boxW * boxH);
   lines.forEach((line, li) => {
     let x = pad + Math.floor((width - measure(font, line)) / 2);
-    // baseline of this line, with the block already pushed down by any mark
-    // the first line carries
-    const y0 = pad + ascent + li * (font.height + font.leading);
+    const y0 = pad + tops[li];   // top of this line's body
     for (const ch of line) {
       const g = glyphFor(font, ch);
       const top = y0 - g.ascent;      // an overhanging mark starts a row higher
@@ -217,7 +239,7 @@ export function placeText({
 }) {
   const font = FONT_BY_ID[fontId];
   const style = resolveStyle(styleId);
-  const { width, height, ascent } = blockMetrics(font, lines);
+  const { width, height, tops } = blockMetrics(font, lines);
 
   // A clearance of 2.5 means two rings fully cleared and a third only partly:
   // roughly half the benefit of a third ring for roughly half the forced
@@ -229,7 +251,7 @@ export function placeText({
   const boxW = width + pad * 2, boxH = height + pad * 2;
   if (boxW > size || boxH > size) return null;
 
-  const ink = rasterise(font, lines, width, boxW, boxH, pad, ascent);
+  const ink = rasterise(font, lines, width, boxW, boxH, pad, tops);
 
   // Chebyshev distance from the nearest stroke, so one pass classifies every
   // module in the box: 0 is ink, 1..pad is clearance, beyond that is plate.
