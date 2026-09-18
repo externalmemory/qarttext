@@ -23,10 +23,16 @@ For technical details, see [qarttext.md](qarttext.md).
 
 - Russ Cox, [QArt Codes](https://research.swtch.com/qart), for the construction.
 
+- Helena Zhang, [Departure Mono](https://departuremono.com/), for the largest
+  face. `src/departure.js` is read off the font file and, unlike the rest of
+  this repository, is under the
+  [SIL Open Font License 1.1](https://openfontlicense.org/), whose text it carries.
+
 - Maurycy Zarzycki, [mcufont](https://maurycyz.com/projects/mcufont/) (CC0),
-  for the letters, digits and nine punctuation marks of `Compact 5×5`. Its own
-  ancestor is lcamtuf's `font-inline.h`. The remaining twenty-four punctuation
-  glyphs of that face are drawn here to match it.
+  for the letters, digits and nine punctuation marks of `Compact 5×5`, the
+  face the app icon is drawn in. Its own ancestor is lcamtuf's `font-inline.h`.
+  The remaining twenty-four punctuation glyphs of that face are drawn here to
+  match it.
 
 The `Micro 3×5` and `Mixed 5×8` tables are original, drawn to the QR module
 grid. These are the faces they are modeled on:

@@ -3,6 +3,8 @@
 // still resolve. Rows are strings; '#' is ink. Two of the tables are drawn
 // here; the third is imported and says so above itself.
 
+import { DEPARTURE, DEPARTURE_HEIGHT } from './departure.js';
+
 // --------------------------------------------------------------- micro 3x5 --
 // Capital forms only, three modules wide where possible. This is the densest
 // legible option and the only one that fits a long domain on a small symbol.
@@ -521,18 +523,22 @@ function trimBlankColumns(rows) {
   return rows.map(r => r.slice(first, last + 1));
 }
 
+const MAX_OVERHANG = 3;
+
 function compile(id, name, note, table, height) {
   const glyphs = {};
   for (const [ch, raw] of Object.entries(table)) {
-    // A glyph may stand one row taller than the face. Nothing else typesets
-    // this text, so a stroke with nowhere to go inside the body can hang
-    // outside it rather than squash the letter into fewer rows than its
-    // neighbours. By default the extra row goes above, which is what a mark
-    // wants -- Й; the few letters in DESCENDS hang it below the baseline
-    // instead, which is what a tail wants -- Q.
+    // A glyph may stand taller than the face. Nothing else typesets this text,
+    // so a stroke with nowhere to go inside the body can hang outside it rather
+    // than squash the letter into fewer rows than its neighbours. By default
+    // the extra rows go above, which is what a mark wants -- Й; the few letters
+    // in DESCENDS hang them below the baseline instead, which is what a tail
+    // wants -- Q. The faces drawn here need one row; Departure Mono sets the
+    // breve of its capital Й three rows above the cap line, with a gap row, and
+    // its marks are left where it drew them.
     const extra = raw.length - height;
-    if (extra !== 0 && extra !== 1) {
-      throw new Error(`${id} '${ch}': ${raw.length} rows, want ${height} or ${height + 1}`);
+    if (extra < 0 || extra > MAX_OVERHANG) {
+      throw new Error(`${id} '${ch}': ${raw.length} rows, want ${height} to ${height + MAX_OVERHANG}`);
     }
     const descent = DESCENDS.has(ch) ? extra : 0;
     const ascent = extra - descent;
@@ -544,13 +550,19 @@ function compile(id, name, note, table, height) {
   return { id, name, note, height, glyphs, tracking: 1, leading: 2 };
 }
 
+// The faces the gallery offers, smallest first.
 export const FONTS = [
   compile('micro', 'Micro 3x5', 'Densest. One case only.', MICRO, 5),
-  compile('compact', 'Compact 5x5', 'Upper and lower case, micro height.', COMPACT, 5),
   compile('lower', 'Mixed 5x8', 'Upper and lower case, with descenders.', LOWER, 8),
+  compile('departure', 'Departure Mono', 'The largest, and the most legible.', DEPARTURE, DEPARTURE_HEIGHT),
 ];
 
-export const FONT_BY_ID = Object.fromEntries(FONTS.map(f => [f.id, f]));
+// Compact 5x5 is no longer offered: it was usually the same size as Mixed 5x8
+// or larger, and less legible for a lowercase one row shorter. It is kept,
+// reachable by id, because the app icon is drawn in it.
+const COMPACT_FACE = compile('compact', 'Compact 5x5', 'Upper and lower case, micro height.', COMPACT, 5);
+
+export const FONT_BY_ID = Object.fromEntries([...FONTS, COMPACT_FACE].map(f => [f.id, f]));
 
 // Text is drawn in whatever case it was typed. A single-case font simply has
 // no glyph for the other case, so the lookup falls back to the one it does

@@ -9,7 +9,7 @@
 // Bump BUILD whenever the shell changes. It names the cache, and the page
 // reads it back off that cache name for the footer, so this is the only place
 // it is written down -- there were two, and they drifted.
-const BUILD = '2026-09-18.2';
+const BUILD = '2026-09-18.3';
 const CACHE = `hrqr-${BUILD}`;
 
 const SHELL = [
@@ -29,6 +29,7 @@ const SHELL = [
   './src/encode.js',
   './src/qart.js',
   './src/fonts.js',
+  './src/departure.js',
   './src/layout.js',
   './src/payload.js',
   './src/install.js',

@@ -159,18 +159,35 @@ plate against halo, and upright against inverted, are plain from the pictures,
 and on a phone a column of labels costs more width than the codes. Each card 
 carries its own name for a screen reader or a hover instead. The fonts are 
 `Micro 3×5`, which holds a single case and is the densest legible option;
-`Compact 5×5`, which has upper and lower case at that same height; and `Mixed 5×8`, 
-which has more legible upper and lower case with descenders.
+`Mixed 5×8`, which has upper and lower case with descenders; and
+[Departure Mono](https://departuremono.com/), the largest and most legible.
+
+Departure Mono is the only face not drawn here. It is a pixel font whose
+outlines lie on a 50-unit grid, so its bitmap is exact rather than a rendering:
+`scripts/extract-departure-mono.py` samples each pixel centre of the release
+font file and writes `src/departure.js`, ten rows from the cap line to the
+bottom of the descenders. It keeps its own letterforms but not its own
+spacing: glyphs are trimmed to their ink and set one module apart like the
+other two faces, which makes labels about a tenth narrower than monospaced
+setting would. Its Cyrillic is its own, including the Ukrainian and
+Belarusian letters.
+
+There used to be a fourth, `Compact 5×5`, with upper and lower case at micro
+height. It was dropped from the grid because it seldom earned its place. Over
+eight domains, four levels and four styles, its code came out the same size as
+`Mixed 5×8` or larger in 85 of 128 cases, and its lowercase, squeezed into five
+rows with no room for descenders, was harder to read. Where it did win, on
+domains of eighteen letters and more, by two versions or so, `Micro 3×5` was
+usually smaller or level with it. The app icon is still drawn in it.
 
 In addition to Latin, fonts carry the Russian, Ukrainian and Belarusian 
 alphabets. Eleven capitals (`А В Е К М Н О Р С Т Х`) are the same shape as a Latin 
-letter and are reused; the rest are drawn. `Compact 5×5` pays almost nothing for 
-them, since nearly every Cyrillic letter wants the five columns that face already gives
-every glyph. `Micro 3×5` pays with some width: `И` collapses to two bare posts at
+letter and are reused; the rest are drawn. `Micro 3×5` pays with some width: `И` collapses to two bare posts at
 three columns, so it takes four, and `Ж Ш Ы Ю Ф` take five, which is the
 allowance the face already makes for `N` at four and `M` and `W` at five.
 
-`Ц` and `Щ` take one column more than their stems need, in every face. Their
+`Ц` and `Щ` take one column more than their stems need, in every face;
+Departure Mono draws them that way too. Their
 bottom bar runs a column past the right stem and the tail hangs from the end of
 it, outside the stems rather than under one. Under one -- which is where it
 started -- `Ц` is exactly `Ч` drawn two rows lower: two stems, a bar across,
@@ -178,7 +195,7 @@ and a stroke below the bar on the right. The only thing separating them is
 where the bar falls relative to a baseline the reader cannot see unless another
 letter is next to it, which is a thin distinction for a letterform that has to
 survive being read out of a field of noise. The extra column costs a module of
-label width and, measured over seven Russian labels in all three faces, no
+label width and, measured over seven Russian labels in the three faces drawn here, no
 symbol sizes: some went up a version, some down, and the median did not move.
 
 `Й` is the letter that does not fit anywhere. Its breve needs a row above a
@@ -187,9 +204,12 @@ body into one row fewer was the obvious move and the wrong one: it produces a
 letter sitting shorter than everything beside it. So a glyph may stand one row
 taller than its face and hang that row outside the line, above the body for a
 mark and below the baseline for a tail. Nothing else typesets this text, so the
-line box simply grows, and only for the outermost lines: a mark on any line but
-the first, or a tail on any line but the last, goes into the leading, which is
-two rows and has the space to spare. Lowercase needs none of this: `й` fits its
+line box simply grows. Between lines, marks and tails go into the two rows of
+leading, and the lines move apart only where ink on one would otherwise come
+within a row of ink on the next -- a tail directly over a mark. That happens in
+`Micro 3×5` when a `Q` sits over a `Й`, and in Departure Mono, which draws the
+breve of its capital `Й` and `Ў` three rows above the cap line, whenever a
+descender sits over one. Lowercase needs none of this: `й` fits its
 breve in the row that lowercase leaves empty above the x-height. `Ё` carries
 its dots the same way, and for the same reason it is worth the row: the
 undotted spelling Russian usually writes is available by typing `е`, so
@@ -589,10 +609,12 @@ itself and reads as a `c`, `u` or `n` depending on which corner went. In a
 bitmap font a diagonal contact is a deliberate stroke join, not an artifact to
 be optimized away. So every corner inside the text box goes to whichever color
 the letters are drawn in, and the counter of an `o` is allowed to become an
-island. Across the three fonts that is 80 closed glyphs in both polarities; 76
+island. Across the three fonts that is 96 closed glyphs in both polarities; 92
 of them lose a counter without the exemption. One island per counter is a cheap
 price, and it is symmetric: the upright styles pay it in picks and the inverted
-styles in pieces, five to nine either way.
+styles in pieces, five to twelve either way on a code for
+`https://example.com/`. The exception is Departure Mono in the upright halo,
+at 43 picks.
 
 Bridging is still worth separating from weeding, because they are not the same
 saving. Joining two dark modules at a corner necessarily severs the two light
