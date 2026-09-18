@@ -172,22 +172,14 @@ other two faces, which makes labels about a tenth narrower than monospaced
 setting would. Its Cyrillic is its own, including the Ukrainian and
 Belarusian letters.
 
-There used to be a fourth, `Compact 5×5`, with upper and lower case at micro
-height. It was dropped from the grid because it seldom earned its place. Over
-eight domains, four levels and four styles, its code came out the same size as
-`Mixed 5×8` or larger in 85 of 128 cases, and its lowercase, squeezed into five
-rows with no room for descenders, was harder to read. Where it did win, on
-domains of eighteen letters and more, by two versions or so, `Micro 3×5` was
-usually smaller or level with it. The app icon is still drawn in it.
-
 In addition to Latin, fonts carry the Russian, Ukrainian and Belarusian 
 alphabets. Eleven capitals (`А В Е К М Н О Р С Т Х`) are the same shape as a Latin 
-letter and are reused; the rest are drawn. `Micro 3×5` pays with some width: `И` collapses to two bare posts at
-three columns, so it takes four, and `Ж Ш Ы Ю Ф` take five, which is the
+letter and are reused; the rest are drawn. `Micro 3×5` pays with some width:
+`И` collapses to two bare posts at three columns, so it takes four, and `Ж Ш Ы Ю Ф` take five, which is the
 allowance the face already makes for `N` at four and `M` and `W` at five.
 
-`Ц` and `Щ` take one column more than their stems need, in every face;
-Departure Mono draws them that way too. Their
+`Ц` and `Щ` take one column more than their stems need, in every face,
+Departure Mono's included. Their
 bottom bar runs a column past the right stem and the tail hangs from the end of
 it, outside the stems rather than under one. Under one -- which is where it
 started -- `Ц` is exactly `Ч` drawn two rows lower: two stems, a bar across,
@@ -195,7 +187,7 @@ and a stroke below the bar on the right. The only thing separating them is
 where the bar falls relative to a baseline the reader cannot see unless another
 letter is next to it, which is a thin distinction for a letterform that has to
 survive being read out of a field of noise. The extra column costs a module of
-label width and, measured over seven Russian labels in the three faces drawn here, no
+label width and, measured over seven Russian labels, no
 symbol sizes: some went up a version, some down, and the median did not move.
 
 `Й` is the letter that does not fit anywhere. Its breve needs a row above a
@@ -209,12 +201,13 @@ leading, and the lines move apart only where ink on one would otherwise come
 within a row of ink on the next -- a tail directly over a mark. That happens in
 `Micro 3×5` when a `Q` sits over a `Й`, and in Departure Mono, which draws the
 breve of its capital `Й` and `Ў` three rows above the cap line, whenever a
-descender sits over one. Lowercase needs none of this: `й` fits its
+descender sits over one. In the faces drawn here, lowercase needs none of
+this: `й` fits its
 breve in the row that lowercase leaves empty above the x-height. `Ё` carries
 its dots the same way, and for the same reason it is worth the row: the
 undotted spelling Russian usually writes is available by typing `е`, so
 drawing the letter without them would take the choice away rather than offer
-it. In the two faces that have no lowercase of their own, `ё` falls back to
+it. In `Micro 3×5`, which has no lowercase of its own, `ё` falls back to
 the capital and ascends with it; where there is a lowercase, the dots sit in
 the empty row and cost nothing at all.
 

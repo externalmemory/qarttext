@@ -6,7 +6,9 @@ import { writeFileSync } from 'node:fs';
 import { generate } from '../src/generate.js';
 import { FONT_BY_ID, glyphFor, measure } from '../src/fonts.js';
 
-const SITE = 'https://qarttext.pages.dev';
+// With the trailing slash the app itself adds, so the icon is the code the
+// app draws for its own address.
+const SITE = 'https://qarttext.pages.dev/';
 
 const CRC = new Uint32Array(256);
 for (let n = 0; n < 256; n++) {
@@ -56,11 +58,17 @@ function writePng(path, width, height, pixel) {
 // version 3, twenty-nine modules, about six pixels each at 192 px. The
 // alphanumeric encoding is what puts version 3 in reach -- the same URL in
 // byte mode does not fit one.
-const code = generate({
-  url: SITE, text: 'QR', ecl: 'L', fontId: 'compact', styleId: 'plate',
+const ICON = {
+  url: SITE, text: 'QR', ecl: 'L', fontId: 'departure', styleId: 'plate',
   maxLines: 1, clearance: 1,
-});
-if (!code) throw new Error('icon code did not generate');
+};
+const placed = generate(ICON);
+if (!placed) throw new Error('icon code did not generate');
+// Nudged one module down from where the search puts it, a placement chosen by
+// eye; the checks below hold it to the same size and clean letters.
+const code = generate({ ...ICON, offset: { x: placed.offset.x, y: placed.offset.y + 1 } });
+if (!code || code.version !== placed.version) throw new Error('nudged icon code changed size');
+if (code.stats.inkMisses || code.stats.nearMisses) throw new Error('nudged icon code has damaged letters');
 // Case-insensitively, because a path-free URL is encoded uppercase. The fold
 // is the only difference allowed, and comparing this way still catches a code
 // that points somewhere else.
@@ -120,16 +128,25 @@ console.log(`icons/icon.svg  v${code.version} ${size}x${size}`);
 // still thin, but a shape rather than a smudge. The line printed below says
 // what it actually comes to, so the claim cannot drift from the code.
 {
-  const font = FONT_BY_ID.compact, text = 'QR', pad = 1;
+  const font = FONT_BY_ID.departure, text = 'QR', pad = 1;
+  const glyphs = [...text].map(ch => glyphFor(font, ch));
+  // Only the rows with ink: the face's body runs two rows below the baseline,
+  // and the tail of the Q uses one of them.
+  const inked = (g, r) => g.rows[r].some(Boolean);
+  const rows = Math.max(...glyphs.map(g => g.rows.length));
+  let top = rows, bottom = -1;
+  for (const g of glyphs) for (let r = 0; r < g.rows.length; r++) {
+    if (inked(g, r)) { top = Math.min(top, r); bottom = Math.max(bottom, r); }
+  }
+  const inkH = bottom - top + 1;
   const w = measure(font, text) + pad * 2;
-  const side = Math.max(w, font.height + pad * 2);
+  const side = Math.max(w, inkH + pad * 2);
   const ox = Math.floor((side - measure(font, text)) / 2);
-  const oy = Math.floor((side - font.height) / 2);
+  const oy = Math.floor((side - inkH) / 2) - top;
   const runs = [];
   let x = ox;
-  for (const ch of text) {
-    const g = glyphFor(font, ch);
-    for (let r = 0; r < font.height; r++) {
+  for (const g of glyphs) {
+    for (let r = top; r <= bottom; r++) {
       let start = -1;
       for (let c = 0; c <= g.width; c++) {
         const on = c < g.width && g.rows[r][c] === 1;
