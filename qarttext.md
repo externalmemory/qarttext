@@ -332,8 +332,22 @@ The search is bounded two ways. Every forced module needs a free bit, so any
 version with fewer than 1.5 free bits per forced module is rejected without
 paying for the elimination; that check costs nothing next to a solve and stops
 the budget being spent on sizes that were never going to work. Beyond that the
-search stops after twelve workable sizes, or as soon as one has exact
-letterforms and a plate above 98.5%.
+search stops after twelve workable sizes, or as soon as one has every stroke
+module right, every module touching a stroke right, and a plate above 98.5%.
+
+The middle condition was added late, and it is the one that matters most to a
+reader. Before it, a symbol passed with a finder or alignment pattern welded
+onto the side of a letter: every stroke module was dark as asked, so the
+letterforms counted as exact, while the fixed square beside the `g` made it
+read as a `9`. The plate figure could not catch it either, since it counts a
+module against a stroke the same as a stray one far out in the plate. Across
+128 codes per face, between 55% and 66% of them had at least one such module,
+and every one was reported as exact. Requiring the ring around the strokes to
+be clean brings that to between 15% and 26% -- the rest are codes where no
+size within the search reaches it, and the card says how many touch rather
+than claiming otherwise. The price is about a version: 1.25 for `Micro 3×5`,
+0.85 for `Mixed 5×8`. Version figures quoted elsewhere in this document were
+measured before the change and run correspondingly small.
 
 Note that fidelity is *not* monotonic in version (a larger symbol is usually
 but not always cleaner), so the search cannot simply stop at the first

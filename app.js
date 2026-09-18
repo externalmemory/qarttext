@@ -161,6 +161,20 @@ function variantName(r) {
   return `${style?.name ?? r.styleId} · ${font?.name ?? r.fontId}`;
 }
 
+/**
+ * What went wrong with the letterforms, as counts. It used to say "letterforms
+ * exact" whenever every stroke module was right, which was true and misleading:
+ * a finder or alignment pattern welded onto the side of a letter leaves every
+ * stroke module right and turns a g into a 9. The modules touching a stroke are
+ * what decide whether the text reads, so those are counted too.
+ */
+function badgeHtml(r) {
+  const { inkMisses, nearMisses = 0 } = r.stats;
+  const text = inkMisses ? `${inkMisses} stuck, ${nearMisses} touching` : `${nearMisses} touching`;
+  const title = 'modules touching a stroke that came out the wrong colour';
+  return `<span class="badge${inkMisses || nearMisses ? ' imperfect' : ''}" title="${title}">${text}</span>`;
+}
+
 function makeCard(r) {
   const card = document.createElement('button');
   card.type = 'button';
@@ -193,11 +207,8 @@ function makeCard(r) {
     card.addEventListener('click', () => select(r, card));
     return card;
   }
-  const perfect = r.stats.inkMisses === 0;
-  meta.innerHTML = head
-    + `<span class="badge${perfect ? '' : ' imperfect'}">`
-    + (perfect ? 'letterforms exact' : `${r.stats.inkMisses} stuck in text`)
-    + `</span> &middot; ${(r.stats.fidelity * 100).toFixed(1)}% plate`
+  meta.innerHTML = head + badgeHtml(r)
+    + ` &middot; ${(r.stats.fidelity * 100).toFixed(1)}% plate`
     + (r.hardWrapped ? '<br>broken mid-label' : '');
 
   card.append(canvas, meta);
@@ -205,6 +216,36 @@ function makeCard(r) {
     `${variantName(r)}, version ${r.version} level ${r.ecl}, ${r.size} by ${r.size} modules`);
   card.addEventListener('click', () => select(r, card));
   return card;
+}
+
+/** The detail panel's figures, for the grid as it stands after any hand edits. */
+function showStats(r) {
+  const s = edited(r).stats;
+  const rows = r.plain ? [
+    ['symbol', `version ${r.version}, level ${r.ecl}, ${r.size}×${r.size}, mask ${r.mask}`],
+    ['payload', `${s.payloadCodewords} of ${s.dataCodewords} data codewords`],
+    ['padding', `${s.padCodewords} codewords of 0xEC and 0x11`],
+    ['error correction', `${s.ecCodewords} codewords in ${s.blocks} block${s.blocks === 1 ? '' : 's'}`],
+    ['print at least', `${minPrintWidthMm(r)} mm wide (${MM_PER_MODULE} mm per module, a rule of thumb rather than a spec)`],
+  ] : [
+    ['symbol', `version ${r.version}, level ${r.ecl}, ${r.size}×${r.size}, mask ${r.mask}`],
+    ['text', r.lines.map(l => `“${l}”`).join(' / ')],
+    ['free bits', `${s.freeBits} of ${s.dataCodewords * 8} data bits`],
+    ['modules forced', `${s.forced} (rank ${s.rank})`],
+    ['letterforms', `${s.inkMisses} of ${s.inkTotal} stuck`],
+    ['touching strokes', `${s.nearMisses ?? 0} of ${s.nearTotal ?? 0} the wrong colour`],
+    ['plate fidelity', `${(s.fidelity * 100).toFixed(2)}%`],
+    ['print at least', `${minPrintWidthMm(r)} mm wide (${MM_PER_MODULE} mm per module, a rule of thumb rather than a spec)`],
+  ];
+  // Built as nodes rather than markup: the label comes from whatever was typed
+  // in, and interpolating that into innerHTML would make it executable.
+  els.stats.replaceChildren(...rows.flatMap(([key, value]) => {
+    const dt = document.createElement('dt');
+    dt.textContent = key;
+    const dd = document.createElement('dd');
+    dd.textContent = value;
+    return [dt, dd];
+  }));
 }
 
 function select(r, card) {
@@ -219,31 +260,7 @@ function select(r, card) {
   els.detailCaption.textContent = `Encodes exactly: ${r.encoded}`;
   redrawBig();
 
-  const s = r.stats;
-  const rows = r.plain ? [
-    ['symbol', `version ${r.version}, level ${r.ecl}, ${r.size}×${r.size}, mask ${r.mask}`],
-    ['payload', `${s.payloadCodewords} of ${s.dataCodewords} data codewords`],
-    ['padding', `${s.padCodewords} codewords of 0xEC and 0x11`],
-    ['error correction', `${s.ecCodewords} codewords in ${s.blocks} block${s.blocks === 1 ? '' : 's'}`],
-    ['print at least', `${minPrintWidthMm(r)} mm wide (${MM_PER_MODULE} mm per module, a rule of thumb rather than a spec)`],
-  ] : [
-    ['symbol', `version ${r.version}, level ${r.ecl}, ${r.size}×${r.size}, mask ${r.mask}`],
-    ['text', r.lines.map(l => `“${l}”`).join(' / ')],
-    ['free bits', `${s.freeBits} of ${s.dataCodewords * 8} data bits`],
-    ['modules forced', `${s.forced} (rank ${s.rank})`],
-    ['letterforms', s.inkMisses === 0 ? `all ${s.inkTotal} exact` : `${s.inkMisses} of ${s.inkTotal} stuck`],
-    ['plate fidelity', `${(s.fidelity * 100).toFixed(2)}%`],
-    ['print at least', `${minPrintWidthMm(r)} mm wide (${MM_PER_MODULE} mm per module, a rule of thumb rather than a spec)`],
-  ];
-  // Built as nodes rather than markup: the label comes from whatever was typed
-  // in, and interpolating that into innerHTML would make it executable.
-  els.stats.replaceChildren(...rows.flatMap(([key, value]) => {
-    const dt = document.createElement('dt');
-    dt.textContent = key;
-    const dd = document.createElement('dd');
-    dd.textContent = value;
-    return [dt, dd];
-  }));
+  showStats(r);
 
   els.offsetOut.textContent = r.offset
     ? `x ${r.offset.x} of ${r.bounds.maxX}, y ${r.offset.y} of ${r.bounds.maxY}`
@@ -275,7 +292,13 @@ function edited(r = selected) {
   if (!r || overrides.size === 0) return r;
   const modules = r.modules.slice();
   for (const [index, value] of overrides) modules[index] = value;
-  return { ...r, modules };
+  // A flip can fix a letter or break one, so the counts follow the grid. The
+  // plate figure is left as solved: a handful of flips barely moves it, and
+  // recounting it would mean carrying every plate target as well.
+  if (!r.checks) return { ...r, modules };
+  const wrong = (list) => list.reduce((n, [i, v]) => n + (modules[i] !== v ? 1 : 0), 0);
+  const stats = { ...r.stats, inkMisses: wrong(r.checks.ink), nearMisses: wrong(r.checks.near) };
+  return { ...r, modules, stats };
 }
 
 // One map per symbol shape. Building it means building a skeleton, and a click
@@ -345,6 +368,9 @@ function afterEdit() {
     painted.set(canvas, r);
     fitCanvas(canvas, r);
   }
+  const badge = selectedCard?.querySelector('.badge');
+  if (badge && selected && !selected.plain) badge.outerHTML = badgeHtml(edited());
+  showStats(selected);
   updateCutStats();
   showEditState();
 }

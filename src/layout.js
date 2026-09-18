@@ -33,6 +33,8 @@ const BAYER4 = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
 const ditherAt = (r, c) => BAYER4[(r & 3) * 4 + (c & 3)] / 16;
 /** Weight marking a letterform module, so callers can count them. */
 export const INK_WEIGHT = W_INK;
+/** Weight marking a module that touches a stroke, the ring legibility depends on. */
+export const NEAR_WEIGHT = W_NEAR;
 
 /** What a step above the middle costs against a step below it, when choosing
  *  between placements the solver is otherwise indifferent to. */

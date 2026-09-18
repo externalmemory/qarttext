@@ -15,6 +15,7 @@ function pack(r) {
     clearance: r.clearance, offset: r.offset, bounds: r.bounds, editable: r.editable,
     // the text box: the cut output needs it to know which corners are letterform
     rect: r.rect, plain: r.plain,
+    checks: r.checks,
     stats: r.stats,
   };
 }

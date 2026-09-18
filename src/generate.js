@@ -5,7 +5,7 @@ import { penaltyScore } from './matrix.js';
 import { applyMask, chooseSegment, smallestVersion, payloadBits } from './encode.js';
 import { solve, pinnedModuleMap } from './qart.js';
 import { FONT_BY_ID, drawableText } from './fonts.js';
-import { resolveStyle, placeText, wrapText, domainOf, normalizeUrl, caseFoldableUrl, DEFAULT_CLEARANCE, INK_WEIGHT } from './layout.js';
+import { resolveStyle, placeText, wrapText, domainOf, normalizeUrl, caseFoldableUrl, DEFAULT_CLEARANCE, INK_WEIGHT, NEAR_WEIGHT } from './layout.js';
 
 // How many workable symbol sizes to try before settling for the best so far.
 // There is no fixed ceiling imposed by scanners: a large symbol reads fine if
@@ -86,8 +86,9 @@ export function generate({
         if (!attempt) continue;
         attempt.hardWrapped = allowHardWrap;
         if (!best || attempt.stats.score > best.stats.score) best = attempt;
-        // good enough: every letterform module correct and a near-clean plate
-        if (attempt.stats.inkMisses === 0 && attempt.stats.fidelity >= 0.985) {
+        // good enough: every letterform module correct, nothing touching a stroke
+        // the wrong colour, and a near-clean plate
+        if (attempt.stats.inkMisses === 0 && attempt.stats.nearMisses === 0 && attempt.stats.fidelity >= 0.985) {
           if (!good || attempt.lines.length < good.lines.length) good = attempt;
           // one line cannot be beaten, and past the premium the wrap has won
           if (good.lines.length === 1 || version >= good.version + LINE_PREMIUM) return good;
@@ -133,9 +134,13 @@ function attemptVersion({ version, ecl, seg, label, drawn, font, style, fontId, 
 
   const inkTargets = placed.targets.filter(t => t.weight === INK_WEIGHT);
   const inkMisses = inkTargets.filter(t => bestMask.modules[t.index] !== t.value).length;
+  const nearTargets = placed.targets.filter(t => t.weight === NEAR_WEIGHT);
+  const nearMisses = nearTargets.filter(t => bestMask.modules[t.index] !== t.value).length;
   const fidelity = 1 - bestMask.misses / placed.targets.length;
   // letterform accuracy dominates; ties broken toward smaller symbols
-  const score = (1 - inkMisses / Math.max(1, inkTargets.length)) * 100 + fidelity * 10 - version * 0.05;
+  const score = (1 - inkMisses / Math.max(1, inkTargets.length)) * 100
+    + (1 - nearMisses / Math.max(1, nearTargets.length)) * 30
+    + fidelity * 10 - version * 0.05;
 
   return {
     modules: bestMask.modules,
@@ -146,6 +151,12 @@ function attemptVersion({ version, ecl, seg, label, drawn, font, style, fontId, 
     // 1 where a module can still be changed; the editor needs this to know
     // which clicks are possible and to color the preview
     editable: pin.map.map(v => v ^ 1),
+    // The modules that decide legibility, kept so a hand edit can be recounted
+    // against them rather than leaving the solver's figures in place.
+    checks: {
+      ink: inkTargets.map(t => [t.index, t.value]),
+      near: nearTargets.map(t => [t.index, t.value]),
+    },
     stats: {
       freeBits: res.freeBits,
       forced: placed.targets.length,
@@ -153,6 +164,8 @@ function attemptVersion({ version, ecl, seg, label, drawn, font, style, fontId, 
       misses: bestMask.misses,
       inkTotal: inkTargets.length,
       inkMisses,
+      nearTotal: nearTargets.length,
+      nearMisses,
       fidelity,
       score,
       penalty: bestMask.penalty,
