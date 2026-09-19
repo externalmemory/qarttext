@@ -17,7 +17,7 @@ const els = {
   mcEmail: $('mcEmail'), mcSite: $('mcSite'),
   plainText: $('plainText'), mailTo: $('mailTo'), mailSubject: $('mailSubject'),
   ecl: $('ecl'), maxLines: $('maxLines'), label: $('label'), alnum: $('alnum'),
-  clearance: $('clearance'), offsetOut: $('offsetOut'), autoPlace: $('autoPlace'),
+  clearance: $('clearance'), rotation: $('rotation'), offsetOut: $('offsetOut'), autoPlace: $('autoPlace'),
   editState: $('editState'), clearEdits: $('clearEdits'),
   status: $('status'), galleryWrap: $('galleryWrap'), gallery: $('gallery'),
   detail: $('detail'), detailTitle: $('detailTitle'), detailCaption: $('detailCaption'),
@@ -102,6 +102,7 @@ function readOptions() {
     ecl: els.ecl.value,
     maxLines: Number(els.maxLines.value),
     clearance: Number(els.clearance.value),
+    rotation: Number(els.rotation.value),
     alnum: els.alnum.checked,
     text: override || null,
   };
@@ -431,7 +432,7 @@ function replace(extra) {
   overrides.clear();
   send({
     type: 'nudge', token: tk, ...readOptions(),
-    fontId: selected.fontId, styleId: selected.styleId,
+    fontId: selected.fontId, styleId: selected.styleId, rotation: selected.rotation ?? 0,
     ...extra,
   }, (msg) => {
     if (msg.token !== tk) return;
@@ -568,6 +569,7 @@ function cutGeometry() {
     bridge: bridgeMode(),
     protect: protectedText(),
     squareFinders: els.cutSquareFinders.checked,
+    rotation: selected.rotation ?? 0,
   });
   return { loops, moduleMm, total, across: widthMm(selected.size, moduleMm, DEFAULT_QUIET) };
 }

@@ -10,7 +10,7 @@ function pack(r) {
   return {
     id: r.id, unfit: r.unfit, error: r.error,
     modules: r.modules, size: r.size, version: r.version, ecl: r.ecl, mask: r.mask,
-    encoded: r.encoded, label: r.label, lines: r.lines,
+    encoded: r.encoded, label: r.label, lines: r.lines, rotation: r.rotation,
     fontId: r.fontId, styleId: r.styleId, hardWrapped: r.hardWrapped,
     clearance: r.clearance, offset: r.offset, bounds: r.bounds, editable: r.editable,
     // the text box: the cut output needs it to know which corners are letterform

@@ -167,6 +167,8 @@ export function filenameFor(result) {
   const bits = [host || 'qr', `v${result.version}`, result.ecl];
   if (result.fontId) bits.push(result.fontId);
   if (result.styleId) bits.push(result.styleId);
+  // a turned code is a different code, and must not save over the upright one
+  if (result.rotation) bits.push(`r${result.rotation}`);
   return bits.join('-').toLowerCase();
 }
 

@@ -78,13 +78,15 @@ export function outlines(modules, size, {
   bridge = radius > 0 ? 'minimal' : 'none',
   protect = null,
   squareFinders = false,
+  // the quarter turn the symbol is shown at, which moves the empty corner
+  rotation = 0,
   segments = SEGMENTS_PER_QUARTER,
 } = {}) {
   const r = Math.min(Math.max(radius, 0), MAX_RADIUS);
   const loops = [];
   for (const raw of traceLoops(modules, size, bridge, protect)) {
     const corners = mergeCollinear(raw);
-    const shaped = r > 0 ? roundCorners(corners, r, size, squareFinders, segments) : corners;
+    const shaped = r > 0 ? roundCorners(corners, r, size, squareFinders, segments, rotation) : corners;
     loops.push(shaped.map(p => ({ x: p.x + quiet, y: p.y + quiet })));
   }
   return loops;
@@ -193,7 +195,7 @@ function mergeCollinear(points) {
  * tears and a blade overshoots; and the two inward corners that meet where
  * modules touch diagonally leave the bridge between them.
  */
-function roundCorners(points, r, size, squareFinders, segments) {
+function roundCorners(points, r, size, squareFinders, segments, rotation) {
   const n = points.length;
   const out = [];
   for (let i = 0; i < n; i++) {
@@ -204,7 +206,7 @@ function roundCorners(points, r, size, squareFinders, segments) {
     // are at least one module long and r never exceeds half a module, so this
     // only guards the assumption.
     const rr = Math.min(r, inLen / 2, outLen / 2);
-    if (rr <= 0 || (squareFinders && inFinder(p, size))) { out.push(p); continue; }
+    if (rr <= 0 || (squareFinders && inFinder(p, size, rotation))) { out.push(p); continue; }
 
     const inDir = { x: (p.x - prev.x) / inLen, y: (p.y - prev.y) / inLen };
     const outDir = { x: (next.x - p.x) / outLen, y: (next.y - p.y) / outLen };
@@ -234,9 +236,12 @@ function roundCorners(points, r, size, squareFinders, segments) {
  * light ring, so leaving them square costs nothing and takes the only real
  * detection risk off the table for anyone who wants it.
  */
-function inFinder({ x, y }, size) {
+function inFinder({ x, y }, size, rotation) {
   const box = (x0, y0) => x >= x0 && x <= x0 + 7 && y >= y0 && y <= y0 + 7;
-  return box(0, 0) || box(size - 7, 0) || box(0, size - 7);
+  // three of the four corners; which one is empty follows the turn
+  const empty = { 0: [size - 7, size - 7], 90: [0, size - 7], 180: [0, 0], 270: [size - 7, 0] }[rotation];
+  return [[0, 0], [size - 7, 0], [0, size - 7], [size - 7, size - 7]]
+    .some(([x0, y0]) => (x0 !== empty[0] || y0 !== empty[1]) && box(x0, y0));
 }
 
 // ------------------------------------------------------------------ pieces

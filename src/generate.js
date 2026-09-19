@@ -46,6 +46,7 @@ export function generate({
   margin = 1,
   clearance = DEFAULT_CLEARANCE,
   offset = null,
+  rotation = 0,
 }) {
   // Callers may hand over exactly what to encode and exactly what to draw; a
   // bare url is the shorthand for the common case.
@@ -66,6 +67,7 @@ export function generate({
   // mark. The label keeps the accent, so the caption and the file name do too.
   const drawn = drawableText(font, label) || label;
 
+  if (!TURNS.has(rotation)) return null;
   const start = versionOverride ?? smallestVersion(ecl, seg);
   if (start === null) return null;
   const end = versionOverride ?? MAX_VERSION;
@@ -81,7 +83,7 @@ export function generate({
       for (let version = start; version <= end; version++) {
         const attempt = attemptVersion({
           version, ecl, seg, label, drawn, font, style, fontId, styleId,
-          maxLines, margin, allowHardWrap, encoded, clearance, offset, minRatio,
+          maxLines, margin, allowHardWrap, encoded, clearance, offset, minRatio, rotation,
         });
         if (!attempt) continue;
         attempt.hardWrapped = allowHardWrap;
@@ -102,7 +104,27 @@ export function generate({
   return best;
 }
 
-function attemptVersion({ version, ecl, seg, label, drawn, font, style, fontId, styleId, maxLines, margin, allowHardWrap, encoded, clearance, offset, minRatio = 0 }) {
+// Quarter turns a finished symbol can be shown at: readers find the finder
+// patterns before anything else, so a turned code scans like any other.
+const TURNS = new Set([0, 90, 180, 270]);
+
+/**
+ * For a symbol turned clockwise by `rotation` degrees, the standard-frame
+ * index behind each module as shown; null for no turn.
+ */
+function turnMap(size, rotation) {
+  if (!rotation) return null;
+  const at = {
+    90: (r, c) => (size - 1 - c) * size + r,
+    180: (r, c) => (size - 1 - r) * size + (size - 1 - c),
+    270: (r, c) => c * size + (size - 1 - r),
+  }[rotation];
+  const map = new Int32Array(size * size);
+  for (let r = 0; r < size; r++) for (let c = 0; c < size; c++) map[r * size + c] = at(r, c);
+  return map;
+}
+
+function attemptVersion({ version, ecl, seg, label, drawn, font, style, fontId, styleId, maxLines, margin, allowHardWrap, encoded, clearance, offset, minRatio = 0, rotation = 0 }) {
   const size = symbolSize(version);
   const usable = size - 2 * margin - 2 * Math.ceil(clearance);
   if (usable <= 0) return null;
@@ -113,16 +135,21 @@ function attemptVersion({ version, ecl, seg, label, drawn, font, style, fontId, 
   const pin = pinnedModuleMap(version, ecl, seg);
   if (!pin) return null;
 
+  // The text is laid out upright on the symbol as it will be shown, turned;
+  // only the solver works in the standard frame.
+  const turn = turnMap(size, rotation);
+  const shown = (a) => turn ? Uint8Array.from(turn, j => a[j]) : a;
   const placed = placeText({
-    size, pinned: pin.map,
-    isFunction: pin.skeleton.isFunction, functionValue: pin.skeleton.functionValue,
+    size, pinned: shown(pin.map),
+    isFunction: shown(pin.skeleton.isFunction), functionValue: shown(pin.skeleton.functionValue),
     fontId, styleId, lines, clearance, offset,
   });
   if (!placed) return null;
+  const targets = turn ? placed.targets.map(t => ({ ...t, index: turn[t.index] })) : placed.targets;
   // Cheap rejection, before paying for the elimination.
   if (pin.freeBits < placed.targets.length * minRatio) return null;
 
-  const res = solve({ version, ecl, seg, targets: placed.targets });
+  const res = solve({ version, ecl, seg, targets });
   if (!res) return null;
 
   const scored = res.results.map(r => {
@@ -132,10 +159,13 @@ function attemptVersion({ version, ecl, seg, label, drawn, font, style, fontId, 
   scored.sort((a, b) => (a.weightedMisses - b.weightedMisses) || (a.penalty - b.penalty));
   const bestMask = scored[0];
 
+  // Counted in the frame the result is shown in, which is the frame the
+  // targets were laid out in.
+  const modules = shown(bestMask.modules);
   const inkTargets = placed.targets.filter(t => t.weight === INK_WEIGHT);
-  const inkMisses = inkTargets.filter(t => bestMask.modules[t.index] !== t.value).length;
+  const inkMisses = inkTargets.filter(t => modules[t.index] !== t.value).length;
   const nearTargets = placed.targets.filter(t => t.weight === NEAR_WEIGHT);
-  const nearMisses = nearTargets.filter(t => bestMask.modules[t.index] !== t.value).length;
+  const nearMisses = nearTargets.filter(t => modules[t.index] !== t.value).length;
   const fidelity = 1 - bestMask.misses / placed.targets.length;
   // letterform accuracy dominates; ties broken toward smaller symbols
   const score = (1 - inkMisses / Math.max(1, inkTargets.length)) * 100
@@ -143,14 +173,14 @@ function attemptVersion({ version, ecl, seg, label, drawn, font, style, fontId, 
     + fidelity * 10 - version * 0.05;
 
   return {
-    modules: bestMask.modules,
-    size, version, ecl, mask: bestMask.mask,
+    modules,
+    size, version, ecl, mask: bestMask.mask, rotation,
     encoded, mode: seg.mode, label, lines,
     fontId, styleId, margin, clearance: placed.clearance,
     rect: placed.rect, offset: placed.offset, bounds: placed.bounds,
     // 1 where a module can still be changed; the editor needs this to know
     // which clicks are possible and to color the preview
-    editable: pin.map.map(v => v ^ 1),
+    editable: shown(pin.map).map(v => v ^ 1),
     // The modules that decide legibility, kept so a hand edit can be recounted
     // against them rather than leaving the solver's figures in place.
     checks: {
