@@ -131,6 +131,33 @@ export function drawToCanvas(result, canvas, {
   return canvas;
 }
 
+/**
+ * Renders exactly `px` pixels across, whatever the symbol size, so codes of
+ * different versions show at the same size side by side. Module edges are
+ * rounded to whole pixels: every edge is sharp, and a module is at most one
+ * pixel wider or narrower than its neighbour. Exports use drawToCanvas, whose
+ * modules are all exactly the same.
+ */
+export function drawToWidth(result, canvas, px, {
+  quiet = DEFAULT_QUIET, dark = '#000000', light = '#ffffff',
+} = {}) {
+  const { modules, size } = result;
+  const total = size + quiet * 2;
+  const edge = (i) => Math.round(i * px / total);
+  canvas.width = px;
+  canvas.height = px;
+  const ctx = canvas.getContext('2d');
+  ctx.imageSmoothingEnabled = false;
+  ctx.fillStyle = light;
+  ctx.fillRect(0, 0, px, px);
+  ctx.fillStyle = dark;
+  for (const [x, y, w] of darkRuns(modules, size)) {
+    const x0 = edge(x + quiet), y0 = edge(y + quiet);
+    ctx.fillRect(x0, y0, edge(x + quiet + w) - x0, edge(y + quiet + 1) - y0);
+  }
+  return canvas;
+}
+
 /** Renders at a scale that lands close to `targetPx` without blurring modules. */
 export function scaleFor(size, targetPx, quiet = DEFAULT_QUIET) {
   return Math.max(1, Math.round(targetPx / (size + quiet * 2)));

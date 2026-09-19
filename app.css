@@ -223,8 +223,8 @@ table.gallery td {
 .card:hover { border-color: var(--accent); transform: translateY(-1px); }
 .card[aria-pressed="true"] { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
 .card canvas {
-  /* width is set per canvas in fitCanvas, so a module lands on whole device
-     pixels; this is the fallback until that runs */
+  /* width is set per canvas in fitCanvas, to whole device pixels; this is
+     the fallback until that runs */
   width: 100%; max-width: 100%; height: auto; display: block; margin-inline: auto;
   image-rendering: pixelated;
   border-radius: 4px;

@@ -5,7 +5,7 @@ import { bestPlainCode } from './src/plain.js';
 import { outlines, cutCounts, bridgeWaist } from './src/contour.js';
 import { toDXF, toCutSVG, widthMm } from './src/cut.js';
 import { installHint, isInstalled } from './src/install.js';
-import { toSVG, drawToCanvas, drawEditable, moduleAt, scaleFor, svgBlob, canvasToPngBlob, filenameFor, minPrintWidthMm, MM_PER_MODULE, DEFAULT_QUIET } from './src/render.js';
+import { toSVG, drawToCanvas, drawToWidth, drawEditable, moduleAt, scaleFor, svgBlob, canvasToPngBlob, filenameFor, minPrintWidthMm, MM_PER_MODULE, DEFAULT_QUIET } from './src/render.js';
 import { damageMap } from './src/qart.js';
 
 const $ = (id) => document.getElementById(id);
@@ -619,14 +619,15 @@ const painted = new Map();
  * same width. The canvas then gets exactly the width it was drawn for, which
  * is at most one module short of the card.
  */
+// Every code fills its card, whatever its version, so the grid compares like
+// with like; a whole number of pixels per module would make a larger symbol
+// come out visibly smaller than its neighbours.
 function fitCanvas(canvas, r) {
-  const total = r.size + DEFAULT_QUIET * 2;
   const dpr = window.devicePixelRatio || 1;
   canvas.style.width = '100%';
-  const avail = canvas.getBoundingClientRect().width || 320;
-  const scale = Math.max(1, Math.floor((avail * dpr) / total));
-  drawToCanvas(r, canvas, { scale, quiet: DEFAULT_QUIET, ...colors() });
-  canvas.style.width = `${(total * scale) / dpr}px`;
+  const px = Math.max(1, Math.floor((canvas.getBoundingClientRect().width || 320) * dpr));
+  drawToWidth(r, canvas, px, { quiet: DEFAULT_QUIET, ...colors() });
+  canvas.style.width = `${px / dpr}px`;
 }
 
 function repaintGallery() {
