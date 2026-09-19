@@ -362,7 +362,7 @@ function compile(id, name, note, table, height) {
     const rows = trimBlankColumns(raw);
     glyphs[ch] = { width: rows[0].length, ascent, descent, rows: rows.map(r => Array.from(r, c => (c === '#' ? 1 : 0))) };
   }
-  return { id, name, note, height, glyphs, tracking: 1, leading: 2 };
+  return { id, name, note, height, glyphs, tracking: 1 };
 }
 
 // The faces the gallery offers, smallest first.

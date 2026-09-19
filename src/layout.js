@@ -17,6 +17,9 @@ export const resolveStyle = (id) => STYLE_BY_ID[id] ?? STYLE_BY_ID[STYLE_ALIASES
 
 export const DEFAULT_CLEARANCE = 2;
 
+// Rows in an alignment pattern.
+const ALIGNMENT_SIZE = 5;
+
 // Priority ladder. The solver satisfies constraints in this order and drops
 // the lowest first when it runs out of freedom, so letterforms always survive
 // and the outer plate is what degrades.
@@ -184,12 +187,13 @@ function lineInk(font, line) {
   return { top, bottom };
 }
 
-function blockMetrics(font, lines) {
+function blockMetrics(font, lines, leading) {
   const width = Math.max(...lines.map(l => measure(font, l)));
   // The first line's marks and the last line's tails make the block taller.
-  // Between lines, the leading is the default; lines move further apart only
-  // where ink on one would otherwise come within a row of ink on the next --
-  // a tail over a mark, y over Й -- so a blank row always separates them.
+  // Between lines, `leading` rows separate one body from the next; lines move
+  // further apart only where ink on one would otherwise come within a row of
+  // ink on the next -- a tail over a mark, y over Й -- so a blank row always
+  // separates them.
   const asc = lines.map(l => lineOverhang(font, l, 'ascent'));
   const desc = lines.map(l => lineOverhang(font, l, 'descent'));
   const reach = lines.map(l => lineInk(font, l));
@@ -197,14 +201,14 @@ function blockMetrics(font, lines) {
   let y = asc[0] ?? 0;
   lines.forEach((_, i) => {
     if (i) {
-      const pitch = font.height + font.leading;
+      const pitch = font.height + leading;
       const clash = reach[i - 1].bottom + 2 - (pitch + reach[i].top);
       y += pitch + Math.max(0, clash);
     }
     tops.push(y);
   });
   const height = lines.length ? y + font.height + desc[lines.length - 1] : 0;
-  return { width, height, tops };
+  return { width, height, tops, asc, desc };
 }
 
 /** Rasterises the lines into an ink grid the size of the whole padded box. */
@@ -239,7 +243,6 @@ export function placeText({
 }) {
   const font = FONT_BY_ID[fontId];
   const style = resolveStyle(styleId);
-  const { width, height, tops } = blockMetrics(font, lines);
 
   // A clearance of 2.5 means two rings fully cleared and a third only partly:
   // roughly half the benefit of a third ring for roughly half the forced
@@ -248,6 +251,27 @@ export function placeText({
   const full = Math.max(1, Math.floor(requested));
   const frac = requested - Math.floor(requested);
   const pad = Math.ceil(requested);
+
+  // Lines are set far enough apart for a row of alignment patterns to pass
+  // between them, each line keeping its full clearance, with a row to spare.
+  // Those rows recur every 16 to 28 modules across the symbol, and a block
+  // packed tight has to fit between two of them; spread this way, the rows can
+  // run through it instead. Measured over 864 codes, this came out cleaner and
+  // smaller than packing the lines two rows apart, and than setting them
+  // exactly one alignment spacing apart.
+  const leading = ALIGNMENT_SIZE + 2 * pad + 1;
+  const { width, height, tops, asc, desc } = blockMetrics(font, lines, leading);
+  // Each line's own band: its body, its marks and tails, and its clearance.
+  // How far row r is inside the nearest band's top or bottom edge, or -1 if
+  // it lies between bands.
+  const bandDepth = (r) => {
+    let depth = -1;
+    tops.forEach((t, i) => {
+      const lo = t - asc[i], hi = t + font.height + desc[i] + 2 * pad;
+      if (r >= lo && r < hi) depth = Math.max(depth, Math.min(r - lo, hi - 1 - r));
+    });
+    return depth;
+  };
   const boxW = width + pad * 2, boxH = height + pad * 2;
   if (boxW > size || boxH > size) return null;
 
@@ -273,9 +297,14 @@ export function placeText({
         // the partly-cleared ring, then ordinary noise beyond it
         if (frac > 0 && d === pad && ditherAt(r, c) < frac) weight = W_DITHER;
         else continue;
+      } else if (bandDepth(r) < 0) {
+        // between two lines' plates, where the alignment patterns are meant to
+        // pass: left to the noise, since a plate there would be asking for
+        // light modules the patterns cannot give
+        continue;
       } else {
         // plate: its outermost ring is the one that gets stippled
-        const toEdge = Math.min(r, c, boxH - 1 - r, boxW - 1 - c);
+        const toEdge = Math.min(bandDepth(r), c, boxW - 1 - c);
         if (frac > 0 && toEdge < pad - full) {
           if (ditherAt(r, c) < frac) weight = W_DITHER;
           else continue;

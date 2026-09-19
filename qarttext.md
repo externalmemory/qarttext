@@ -197,12 +197,10 @@ body into one row fewer was the obvious move and the wrong one: it produces a
 letter sitting shorter than everything beside it. So a glyph may stand one row
 taller than its face and hang that row outside the line, above the body for a
 mark and below the baseline for a tail. Nothing else typesets this text, so the
-line box simply grows. Between lines, marks and tails go into the two rows of
-leading, and the lines move apart only where ink on one would otherwise come
-within a row of ink on the next -- a tail directly over a mark. That happens in
-`Micro 3×5` when a `Q` sits over a `Й`, and in Departure Mono, which draws the
-breve of its capital `Й` and `Ў` three rows above the cap line, whenever a
-descender sits over one. In the faces drawn here, lowercase needs none of
+line box simply grows. Between lines, marks and tails go into the leading,
+which is wide (see [Line Spacing](#line-spacing)), and the lines move further
+apart only where ink on one would otherwise come within a row of ink on the
+next -- a tail directly over a mark. In the faces drawn here, lowercase needs none of
 this: `й` fits its
 breve in the row that lowercase leaves empty above the x-height. `Ё` carries
 its dots the same way, and for the same reason it is worth the row: the
@@ -237,18 +235,18 @@ how far the forced region extends, and which way round the letters run:
 
 |  | upright | inverted |
 | --- | --- | --- |
-| **Plate**: a filled rectangle behind the text | light plate, dark letters | dark plate, light letters |
+| **Plate**: a filled rectangle behind each line of text | light plate, dark letters | dark plate, light letters |
 | **Halo**: clearance around the strokes only, noise beyond | light clearance, dark letters | dark clearance, light letters |
 
-The gallery draws each code at a whole number of device pixels per module.
-`image-rendering: pixelated` snaps every module edge to a device pixel, so a
-module that works out at 4.43 pixels comes out four wide in some places and
-five in others -- a fifth of a module, plainly visible as uneven strokes in the
-letterforms. Sizing the canvas from the space the card actually has, rather
-than stretching a nominally-sized one to fit, keeps every module identical. The
-cost is that a code can fall up to one module short of its card, so the cards
-are a fixed equal width and the codes sit centered in them at their true
-relative sizes.
+The gallery draws every code exactly as wide as its card, so codes of
+different versions compare side by side at the same size. Module edges are
+rounded to whole device pixels: every edge is sharp, and a module comes out at
+most one pixel wider or narrower than its neighbour. That unevenness is the
+price of equal sizes. The alternative, a whole number of pixels per module,
+keeps modules identical but makes the drawn size jump with the version -- at a
+320-pixel card, 113 modules get two pixels each and 93 get three, so the
+larger symbol shows a fifth smaller than its neighbour. The detail view and
+every export use whole-pixel modules.
 
 Whitespace is what makes the text readable, far more than the choice of font.
 Clearance of 1 leaves the letterforms fighting the surrounding noise.
@@ -417,6 +415,33 @@ versions for a short domain and eight for a long one.
 The detail panel exposes a nudge pad if you want to place the text by hand;
 each nudge re-solves from scratch, and directions with no room are grayed out.
 
+### Line Spacing
+
+Alignment patterns -- the small squares with a dot inside -- stand in rows
+16 to 28 modules apart across any symbol from version 7 up. Two lines of text
+packed tightly, with their clearance, make a block about as tall as that
+spacing, so the block has to squeeze between two rows of patterns or pay for
+landing on them. Lines are therefore set far enough apart for a row of
+patterns to pass between them: five rows for the pattern, the full clearance
+of each line on either side of it, and one row to spare -- ten rows at the
+default clearance of 2. In the plate styles each line gets its own plate and
+the gap between them is left as noise, since a plate there would ask the
+patterns for light modules they cannot give. A single line is unaffected.
+
+Measured over 864 codes (six domains, four levels, three fonts, plate and
+halo, clearance 1, 2 and 3, upright and turned 90°):
+
+| Line spacing | Clean | Mean version |
+| --- | --- | --- |
+| two rows, as before | 637 | 19.12 |
+| one alignment spacing from line to line | 661 | 18.66 |
+| room for one row of patterns (used) | **677** | **18.62** |
+
+Locking the lines to the pattern grid buys nothing over simply leaving room for
+one row of patterns: the rows are far enough apart that each line already has
+space to spare between them, and the extra height only leaves the block fewer
+places to go.
+
 ## Manual Editing
 
 The large preview is editable. Click any module and it flips; click it again and
@@ -503,7 +528,8 @@ fewer codewords and concentrates its demand on fewer blocks, which can run out
 of freedom before the others.
 
 Measured over 240 codes (five domains, four levels, three fonts, four styles),
-each orientation given its own full version search:
+each orientation given its own full version search, with lines still set two
+rows apart (before [Line Spacing](#line-spacing)):
 
 | Rotation | Clean | Mean version | Stuck letters | Touching |
 | --- | --- | --- | --- | --- |
