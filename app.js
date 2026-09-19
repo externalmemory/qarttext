@@ -7,6 +7,7 @@ import { toDXF, toCutSVG, widthMm } from './src/cut.js';
 import { installHint, isInstalled } from './src/install.js';
 import { toSVG, drawToCanvas, drawToWidth, drawEditable, moduleAt, scaleFor, svgBlob, canvasToPngBlob, filenameFor, minPrintWidthMm, MM_PER_MODULE, DEFAULT_QUIET } from './src/render.js';
 import { damageMap } from './src/qart.js';
+import { MIN_VERSION, MAX_VERSION, symbolSize } from './src/qr.js';
 
 const $ = (id) => document.getElementById(id);
 const els = {
@@ -17,7 +18,7 @@ const els = {
   mcEmail: $('mcEmail'), mcSite: $('mcSite'),
   plainText: $('plainText'), mailTo: $('mailTo'), mailSubject: $('mailSubject'),
   ecl: $('ecl'), maxLines: $('maxLines'), label: $('label'), alnum: $('alnum'),
-  clearance: $('clearance'), rotation: $('rotation'), offsetOut: $('offsetOut'), autoPlace: $('autoPlace'),
+  clearance: $('clearance'), maxVersion: $('maxVersion'), rotation: $('rotation'), offsetOut: $('offsetOut'), autoPlace: $('autoPlace'),
   editState: $('editState'), clearEdits: $('clearEdits'),
   status: $('status'), galleryWrap: $('galleryWrap'), gallery: $('gallery'),
   detail: $('detail'), detailTitle: $('detailTitle'), detailCaption: $('detailCaption'),
@@ -103,9 +104,18 @@ function readOptions() {
     maxLines: Number(els.maxLines.value),
     clearance: Number(els.clearance.value),
     rotation: Number(els.rotation.value),
+    maxVersion: Number(els.maxVersion.value),
     alnum: els.alnum.checked,
     text: override || null,
   };
+}
+
+// Every symbol size, by its width in modules. The largest is the default: no
+// limit, so the search goes on until the text comes out clean. A smaller limit
+// stops it there and keeps the best code it found, errors and all.
+for (let v = MIN_VERSION; v <= MAX_VERSION; v++) {
+  const n = symbolSize(v);
+  els.maxVersion.add(new Option(`${n}\u00d7${n}${v === MAX_VERSION ? ' (no limit)' : ''}`, String(v), false, v === MAX_VERSION));
 }
 
 // Only the fields belonging to the selected kind are shown.
@@ -684,7 +694,7 @@ function run() {
       const fitted = els.gallery.querySelectorAll('.card:not(.unfit)').length;
       setStatus(fitted
         ? `${fitted} variants in ${Math.round(performance.now() - started)} ms.`
-        : 'Nothing fits. Try a lower error-correction level, more lines, or less clearance.', !fitted);
+        : 'Nothing fits. Try a lower error-correction level, more lines, less clearance, or a larger size.', !fitted);
     }
   });
 }

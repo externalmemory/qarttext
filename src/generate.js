@@ -43,6 +43,9 @@ export function generate({
   maxLines = 2,
   alnum = true,
   versionOverride = null,
+  // the largest symbol to consider; past it, the best of what was tried is
+  // returned, stuck or touching modules and all
+  maxVersion = MAX_VERSION,
   margin = 1,
   clearance = DEFAULT_CLEARANCE,
   offset = null,
@@ -70,7 +73,7 @@ export function generate({
   if (!TURNS.has(rotation)) return null;
   const start = versionOverride ?? smallestVersion(ecl, seg);
   if (start === null) return null;
-  const end = versionOverride ?? MAX_VERSION;
+  const end = versionOverride ?? Math.min(MAX_VERSION, maxVersion);
 
   let best = null;
   // Passes, cheapest acceptable first: skip under-provisioned symbol sizes,
