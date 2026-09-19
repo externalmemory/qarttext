@@ -148,6 +148,7 @@ at 65 mm rather than 28, so the form says so once a card passes 90 bytes.
 | Error correction | `L` leaves the most room for artwork, `H` the least. `M` is a good default. |
 | Maximum lines | How many lines the text may wrap onto, up to 5. Breaks are taken at a space, or after a dot or a hyphen. Two is plenty for a domain; a phrase in the override wants more. |
 | Clearance | Rings of whitespace between the letterforms and the surrounding noise. Half steps allowed. Default 2. |
+| Largest size | The biggest symbol the search may use, in modules. Past it, the best code found is kept even with stuck or touching modules, which the card reports. Default 177×177, no limit. |
 | Rotation | Turn the symbol a quarter turn clockwise (90°) or anticlockwise (270°), keeping the text upright. Default 0°. |
 | Text override | Draw something other than the default label. |
 | Alphanumeric encoding | Encode the address in capitals to buy a denser mode, where that is safe. On by default. |
